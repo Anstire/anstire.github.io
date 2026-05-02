@@ -6,23 +6,35 @@
   <title>Anstire | The Lab</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
-    body { background: radial-gradient(circle at center, #110022 0%, #050505 100%); color: #fff; min-height: 100vh; }
+    body { background: #050505; color: #fff; min-height: 100vh; overflow-x: hidden; }
     
-    nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; z-index: 100; border-bottom: 1px solid rgba(0,255,255,0.1); }
+    /* Navigation */
+    nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; z-index: 100; background: rgba(5,5,5,0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,255,255,0.1); }
     .logo { font-size: 24px; font-weight: bold; color: #00ffff; text-decoration: none; letter-spacing: 2px; }
-    .links a { color: #fff; text-decoration: none; margin-left: 30px; font-size: 14px; text-transform: uppercase; }
+    .links a { color: #fff; text-decoration: none; margin-left: 30px; font-size: 14px; text-transform: uppercase; transition: 0.3s; }
+    .links a:hover { color: #b478ff; }
 
     .container { padding: 120px 50px 50px; max-width: 1200px; margin: 0 auto; }
     .header { font-size: 2rem; color: #b478ff; margin-bottom: 40px; border-bottom: 1px solid rgba(180,120,255,0.3); padding-bottom: 10px; }
     
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 40px; }
     
-    /* Glassmorphic Cards */
-    .card { background: rgba(255,255,255,0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 30px; transition: transform 0.3s, box-shadow 0.3s; }
-    .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,255,255,0.15); border-color: rgba(0,255,255,0.4); }
-    .card h3 { color: #00ffff; font-size: 1.5rem; margin-bottom: 15px; }
-    .card p { color: #aaa; line-height: 1.6; margin-bottom: 20px; font-size: 14px; }
-    .tag { display: inline-block; padding: 5px 10px; background: rgba(180,120,255,0.1); border: 1px solid rgba(180,120,255,0.3); color: #b478ff; font-size: 11px; border-radius: 4px; margin-right: 5px; }
+    /* Interactive Tool Cards */
+    .tool-card { background: rgba(20,20,25,0.6); border: 1px solid rgba(0,255,255,0.2); border-radius: 8px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .tool-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .tool-header h3 { color: #00ffff; font-size: 1.5rem; }
+    .tag { padding: 4px 8px; background: rgba(180,120,255,0.1); border: 1px solid rgba(180,120,255,0.3); color: #b478ff; font-size: 11px; border-radius: 4px; text-transform: uppercase; }
+    
+    /* Inputs & Buttons */
+    textarea, input { width: 100%; background: #000; color: #00ffff; border: 1px solid #444; padding: 15px; margin-bottom: 15px; border-radius: 4px; font-size: 14px; outline: none; }
+    textarea:focus, input:focus { border-color: #00ffff; }
+    button { padding: 12px 24px; background: transparent; color: #00ffff; border: 1px solid #00ffff; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; border-radius: 4px; }
+    button:hover { background: #00ffff; color: #000; }
+    
+    /* Output Console */
+    .output-console { background: #000; border: 1px solid #333; padding: 15px; border-radius: 4px; min-height: 80px; font-size: 13px; color: #aaa; white-space: pre-wrap; margin-top: 15px; }
+    .success { color: #00ff00; }
+    .error { color: #ff3366; }
   </style>
 </head>
 <body>
@@ -33,33 +45,130 @@
       <a href="/tools/">Tools</a>
       <a href="/source-code/">Arena</a>
       <a href="/about/">Terminal</a>
+      <a href="/contact/">Comms</a>
     </div>
   </nav>
 
   <div class="container">
-    <div class="header">SOFTWARE ARCHITECTURE</div>
+    <div class="header">LIVE SYSTEMS LAB</div>
     <div class="grid">
       
-      <div class="card">
-        <h3>FormulaFlux</h3>
-        <p>A custom formula engine built with offline-first logic. Features a proprietary .frml file format for instant mathematical rendering and theme management.</p>
-        <div>
-          <span class="tag">React Native</span>
-          <span class="tag">TypeScript</span>
+      <!-- TOOL 1: Hash-Based Duplicate Detector -->
+      <div class="tool-card">
+        <div class="tool-header">
+          <h3>File Chaos Detector (Web Edition)</h3>
+          <span class="tag">Client-Side Logic</span>
         </div>
+        <p style="color: #aaa; margin-bottom: 20px; font-size: 14px;">Select multiple text files from your system. The engine will generate a SHA-256 hash for each and flag exact duplicates instantly without uploading data to a server.</p>
+        
+        <input type="file" id="fileInput" multiple accept=".txt,.json,.csv,.md">
+        <button onclick="detectDuplicates()">Scan Files</button>
+        
+        <div class="output-console" id="chaosOutput">Awaiting file input...</div>
       </div>
 
-      <div class="card">
-        <h3>File Chaos Detector</h3>
-        <p>A desktop application designed to traverse local directories, detect duplicate hashes, and optimize storage allocation.</p>
-        <div>
-          <span class="tag">Python</span>
-          <span class="tag">System Utilities</span>
+      <!-- TOOL 2: FormulaFlux Engine -->
+      <div class="tool-card">
+        <div class="tool-header">
+          <h3>FormulaFlux Engine</h3>
+          <span class="tag">Math Parser</span>
         </div>
+        <p style="color: #aaa; margin-bottom: 20px; font-size: 14px;">Define custom variables and write a mathematical formula to evaluate it instantly.</p>
+        
+        <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+          <input type="text" id="varsInput" placeholder="Variables (e.g., x=10, y=5)" style="flex: 1; margin: 0;">
+          <input type="text" id="formulaInput" placeholder="Formula (e.g., x * Math.pow(y, 2))" style="flex: 2; margin: 0;">
+        </div>
+        <button onclick="evaluateFormula()">Execute Formula</button>
+        
+        <div class="output-console" id="fluxOutput">Engine ready...</div>
       </div>
 
     </div>
   </div>
 
+  <script>
+    /* =========================================
+       TOOL 1 LOGIC: Chaos Detector (SHA-256)
+       ========================================= */
+    async function hashString(str) {
+      const buffer = new TextEncoder().encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function detectDuplicates() {
+      const files = document.getElementById('fileInput').files;
+      const output = document.getElementById('chaosOutput');
+      
+      if (files.length === 0) {
+        output.innerHTML = "<span class='error'>Error: No files selected.</span>";
+        return;
+      }
+
+      output.innerHTML = "Scanning...<br>";
+      const hashStorage = {};
+      let duplicatesFound = 0;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const text = await file.text();
+        const hash = await hashString(text);
+
+        if (hashStorage[hash]) {
+          output.innerHTML += `<span class='error'>[DUPLICATE DETECTED]</span> ${file.name} matches ${hashStorage[hash]}<br>`;
+          duplicatesFound++;
+        } else {
+          hashStorage[hash] = file.name;
+          output.innerHTML += `[SCANNED] ${file.name} (Hash: ${hash.substring(0,8)}...)<br>`;
+        }
+      }
+
+      output.innerHTML += `<br><span class='success'>Scan Complete. Found ${duplicatesFound} duplicates across ${files.length} files.</span>`;
+    }
+
+    /* =========================================
+       TOOL 2 LOGIC: FormulaFlux Web Parser
+       ========================================= */
+    function evaluateFormula() {
+      const varsRaw = document.getElementById('varsInput').value;
+      const formula = document.getElementById('formulaInput').value;
+      const output = document.getElementById('fluxOutput');
+
+      if (!formula) {
+        output.innerHTML = "<span class='error'>Error: Formula field is empty.</span>";
+        return;
+      }
+
+      try {
+        // Parse variables into a safe object context
+        const context = {};
+        if (varsRaw.trim() !== "") {
+          const pairs = varsRaw.split(',');
+          pairs.forEach(pair => {
+            const [key, val] = pair.split('=');
+            if (key && val) context[key.trim()] = parseFloat(val.trim());
+          });
+        }
+
+        // Extremely basic and safe parser using the Function constructor
+        // By passing the keys and values of the context object, we expose them to the formula
+        const keys = Object.keys(context);
+        const values = Object.values(context);
+        
+        // Expose JavaScript's Math object properties to the formula naturally
+        const mathContext = Object.getOwnPropertyNames(Math).map(p => `const ${p} = Math.${p};`).join('');
+        
+        const executor = new Function(...keys, `${mathContext} return ${formula};`);
+        const result = executor(...values);
+
+        output.innerHTML = `<span class='success'>Result: ${result}</span>`;
+        
+      } catch (err) {
+        output.innerHTML = `<span class='error'>Syntax Error: Could not evaluate formula.<br>${err.message}</span>`;
+      }
+    }
+  </script>
 </body>
 </html>

@@ -3,79 +3,112 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Anstire | Terminal</title>
+  <title>Anstire | About</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
-    body { background: #050505; color: #00ff00; min-height: 100vh; display: flex; flex-direction: column; }
+    /* UNIVERSAL GLASSMORPHISM & THEME CSS */
+    :root {
+      --bg-base: #050508; --bg-gradient: radial-gradient(circle at top right, #1a1a2e 0%, #050508 100%);
+      --text-main: #f5f5f7; --text-muted: #a1a1a6;
+      --glass-bg: rgba(30, 30, 35, 0.4); --glass-border: rgba(255, 255, 255, 0.08); --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+      --accent: #00e5ff; --accent-hover: #b478ff; --input-bg: rgba(0, 0, 0, 0.3);
+    }
+    [data-theme="light"] {
+      --bg-base: #f5f5f7; --bg-gradient: radial-gradient(circle at top right, #ffffff 0%, #e8e8ed 100%);
+      --text-main: #1d1d1f; --text-muted: #86868b;
+      --glass-bg: rgba(255, 255, 255, 0.6); --glass-border: rgba(0, 0, 0, 0.05); --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+      --accent: #0066cc; --accent-hover: #8833ff; --input-bg: rgba(255, 255, 255, 0.5);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg-base); background-image: var(--bg-gradient); color: var(--text-main); min-height: 100vh; overflow-x: hidden; transition: 0.4s ease; }
     
-    nav { width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; border-bottom: 1px solid #333; }
-    .logo, .links a { color: #555; text-decoration: none; text-transform: uppercase; font-size: 14px; }
-    .logo { font-weight: bold; color: #fff; }
-    .links a { margin-left: 30px; }
+    /* NAV */
+    nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; z-index: 100; background: var(--glass-bg); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border); transition: 0.4s ease; }
+    .logo { font-size: 22px; font-weight: 700; color: var(--text-main); text-decoration: none; letter-spacing: 1px; font-family: 'Courier New', monospace; }
+    .nav-controls { display: flex; align-items: center; gap: 30px; }
+    .links a { color: var(--text-main); text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.3s; margin-left: 20px; text-transform: uppercase; }
+    .links a:hover { color: var(--accent); }
+    .theme-btn { background: var(--input-bg); border: 1px solid var(--glass-border); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.3s; }
+    .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-    .terminal { flex-grow: 1; padding: 50px; max-width: 900px; margin: 0 auto; width: 100%; }
-    .prompt::before { content: "root@anstire:~$ "; color: #00ffff; }
-    .text-line { margin-bottom: 15px; line-height: 1.6; min-height: 22px; }
-    .cursor { display: inline-block; width: 10px; height: 18px; background: #00ff00; animation: blink 1s step-end infinite; vertical-align: middle; }
+    /* LAYOUT & UI */
+    .container { padding: 120px 50px 80px; max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+    @media (max-width: 800px) { .container { grid-template-columns: 1fr; } }
     
-    @keyframes blink { 50% { opacity: 0; } }
+    .glass-card { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 40px; box-shadow: var(--glass-shadow); }
+    
+    h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 20px; letter-spacing: -0.5px; font-family: 'Courier New', monospace; }
+    h2 { font-size: 1.2rem; color: var(--accent); margin-bottom: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+    p { font-size: 1rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 20px; }
+    
+    .status-indicator { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 6px 12px; background: rgba(0, 255, 128, 0.1); color: #00ff80; border-radius: 20px; border: 1px solid rgba(0, 255, 128, 0.3); margin-bottom: 30px; }
+    .dot { width: 8px; height: 8px; background: #00ff80; border-radius: 50%; box-shadow: 0 0 8px #00ff80; animation: pulse 2s infinite; }
+    
+    .tag-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; }
+    .tag { padding: 8px 16px; background: var(--input-bg); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 13px; font-weight: 500; border-radius: 8px; transition: 0.2s; cursor: default; }
+    .tag:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
   </style>
+  <script>
+    const savedTheme = localStorage.getItem('anstire_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  </script>
 </head>
 <body>
 
   <nav>
     <a href="/" class="logo">ANSTIRE</a>
-    <div class="links">
-      <a href="/tools/">Tools</a>
-      <a href="/about/">Terminal</a>
+    <div class="nav-controls">
+      <div class="links">
+        <a href="/tools/">Tools</a>
+        <a href="/source-code/">Arena</a>
+        <a href="/contact/">Comms</a>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">Light Mode</button>
     </div>
   </nav>
 
-  <div class="terminal" id="term">
-    <!-- Text injected via JS -->
+  <div class="container">
+    <!-- Left Column: Identity -->
+    <div class="glass-card">
+      <div class="status-indicator">
+        <div class="dot"></div> System Online | Patna, IN
+      </div>
+      <h1>Shubham Ranjan</h1>
+      <p>I am a student, developer, and aspiring entrepreneur. I specialize in building custom software architecture, mathematical render engines, and algorithm analysis.</p>
+      <p>My goal is to design scalable tech solutions, deploy high-utility applications to the Google Play Store, and push the limits of local AI models.</p>
+    </div>
+
+    <!-- Right Column: Tech & Focus -->
+    <div class="glass-card">
+      <h2>Tech Stack</h2>
+      <div class="tag-grid">
+        <div class="tag">JavaScript (ES6+)</div>
+        <div class="tag">Python</div>
+        <div class="tag">React Native</div>
+        <div class="tag">HTML5 Canvas</div>
+        <div class="tag">p5.js</div>
+        <div class="tag">CCapture.js</div>
+      </div>
+
+      <h2>Current Focus</h2>
+      <div class="tag-grid">
+        <div class="tag" style="border-color: var(--accent-hover); color: var(--accent-hover);">Local LLM Deployment (GGUF)</div>
+        <div class="tag" style="border-color: var(--accent-hover); color: var(--accent-hover);">Formula Engine Architecture</div>
+        <div class="tag" style="border-color: var(--accent-hover); color: var(--accent-hover);">Physics Simulations</div>
+      </div>
+    </div>
   </div>
 
   <script>
-    const lines = [
-      "Initializing profile data...",
-      "Location: Patna, Bihar.",
-      "Status: Entrepreneur in training. Mastering the foundational mechanics of Science and Mathematics.",
-      "Current Focus: Local LLM deployment (GGUF via LM Studio), custom software architecture, and algorithm analysis.",
-      "Objective: Scalable tech solutions and securing Google Play Developer deployment.",
-      "Execute file: /sys/vision/code_clash.sh"
-    ];
-
-    const term = document.getElementById('term');
-    let lineIdx = 0;
-    let charIdx = 0;
-
-    function typeLine() {
-      if (lineIdx >= lines.length) return;
-      
-      let currentLineDiv = document.getElementById('line-' + lineIdx);
-      if (!currentLineDiv) {
-        currentLineDiv = document.createElement('div');
-        currentLineDiv.id = 'line-' + lineIdx;
-        currentLineDiv.className = 'text-line prompt';
-        currentLineDiv.innerHTML = '<span class="content"></span><span class="cursor"></span>';
-        term.appendChild(currentLineDiv);
-      }
-
-      const contentSpan = currentLineDiv.querySelector('.content');
-      contentSpan.textContent += lines[lineIdx][charIdx];
-      charIdx++;
-
-      if (charIdx < lines[lineIdx].length) {
-        setTimeout(typeLine, Math.random() * 30 + 20); // Typing speed
-      } else {
-        currentLineDiv.querySelector('.cursor').remove();
-        lineIdx++;
-        charIdx = 0;
-        setTimeout(typeLine, 400); // Pause between lines
-      }
+    document.getElementById('themeBtn').innerText = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('anstire_theme', next);
+      document.getElementById('themeBtn').innerText = next === 'dark' ? 'Light Mode' : 'Dark Mode';
     }
-    
-    setTimeout(typeLine, 500);
   </script>
 </body>
 </html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anstire | AI Code Clash & Simulations</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #38bdf8;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        header {
+            padding: 4rem 0 2rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            margin-bottom: 2rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: #000;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.4);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            transition: border-color 0.3s;
+        }
+
+        .card:hover {
+            border-color: var(--accent-color);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+        }
+
+        footer {
+            margin-top: 5rem;
+            padding: 2rem;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            border-top: 1px solid #334155;
+        }
+
+        .social-links a {
+            color: var(--text-dim);
+            margin: 0 10px;
+            text-decoration: none;
+        }
+
+        .social-links a:hover {
+            color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Anstire</h1>
+            <p class="tagline">Pushing the limits of AI, Coding, and Physics Simulations.</p>
+            <a href="https://www.youtube.com/@anstire" class="cta-button">Visit My YouTube Channel</a>
+        </header>
+
+        <section class="features">
+            <div class="card">
+                <h3>AI Code Clash</h3>
+                <p>Direct comparisons between the world's most powerful LLMs. See who writes the cleanest, most efficient code in real-time.</p>
+            </div>
+
+            <div class="card">
+                <h3>Physics Simulations</h3>
+                <p>Visualizing complex scientific concepts through high-fidelity simulations—from Newton’s Cradle to fractals.</p>
+            </div>
+
+            <div class="card">
+                <h3>Local AI Research</h3>
+                <p>Exploring the potential of running Large Language Models on personal hardware and optimizing GGUF workflows.</p>
+            </div>
+        </section>
+
+        <footer>
+            <div class="social-links">
+                <a href="#">GitHub</a>
+                <a href="#">Twitter</a>
+                <a href="https://www.youtube.com/@anstire">YouTube</a>
+            </div>
+            <p>&copy; 2026 Anstire. Built with React & Passion.</p>
+        </footer>
+    </div>
+
+</body>
+</html>

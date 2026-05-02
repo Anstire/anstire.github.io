@@ -1,145 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anstire | AI Code Clash & Simulations</title>
-    <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent-color: #38bdf8;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anstire | Systems & Code</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
+    body { background: #050505; color: #fff; overflow-x: hidden; }
+    
+    /* Navigation */
+    nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; z-index: 100; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,255,255,0.1); }
+    .logo { font-size: 24px; font-weight: bold; color: #00ffff; text-shadow: 0 0 10px rgba(0,255,255,0.5); letter-spacing: 2px; text-decoration: none; }
+    .links a { color: #fff; text-decoration: none; margin-left: 30px; font-size: 14px; text-transform: uppercase; transition: 0.3s; }
+    .links a:hover { color: #b478ff; text-shadow: 0 0 10px rgba(180,120,255,0.8); }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            line-height: 1.6;
-        }
+    /* Hero Section */
+    .hero { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 10; pointer-events: none; }
+    h1 { font-size: 4rem; letter-spacing: 5px; margin-bottom: 10px; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
+    p { font-size: 1.2rem; color: #aaa; letter-spacing: 2px; margin-bottom: 40px; text-transform: uppercase; }
+    .cta { pointer-events: auto; padding: 15px 40px; background: transparent; border: 1px solid #00ffff; color: #00ffff; font-size: 16px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; text-decoration: none; }
+    .cta:hover { background: #00ffff; color: #000; box-shadow: 0 0 20px #00ffff; }
 
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 2rem;
-            text-align: center;
-        }
-
-        header {
-            padding: 4rem 0 2rem;
-        }
-
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(to right, #38bdf8, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .tagline {
-            font-size: 1.2rem;
-            color: var(--text-dim);
-            margin-bottom: 2rem;
-        }
-
-        .cta-button {
-            display: inline-block;
-            background-color: var(--accent-color);
-            color: #000;
-            padding: 0.8rem 2rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.4);
-        }
-
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 4rem;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            padding: 2rem;
-            border-radius: 12px;
-            border: 1px solid #334155;
-            transition: border-color 0.3s;
-        }
-
-        .card:hover {
-            border-color: var(--accent-color);
-        }
-
-        .card h3 {
-            margin-top: 0;
-            color: var(--accent-color);
-        }
-
-        footer {
-            margin-top: 5rem;
-            padding: 2rem;
-            color: var(--text-dim);
-            font-size: 0.9rem;
-            border-top: 1px solid #334155;
-        }
-
-        .social-links a {
-            color: var(--text-dim);
-            margin: 0 10px;
-            text-decoration: none;
-        }
-
-        .social-links a:hover {
-            color: var(--accent-color);
-        }
-    </style>
+    /* Canvas Background */
+    #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+  </style>
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1>Anstire</h1>
-            <p class="tagline">Pushing the limits of AI, Coding, and Physics Simulations.</p>
-            <a href="https://www.youtube.com/@anstire" class="cta-button">Visit My YouTube Channel</a>
-        </header>
+  <canvas id="bg-canvas"></canvas>
 
-        <section class="features">
-            <div class="card">
-                <h3>AI Code Clash</h3>
-                <p>Direct comparisons between the world's most powerful LLMs. See who writes the cleanest, most efficient code in real-time.</p>
-            </div>
-
-            <div class="card">
-                <h3>Physics Simulations</h3>
-                <p>Visualizing complex scientific concepts through high-fidelity simulations—from Newton’s Cradle to fractals.</p>
-            </div>
-
-            <div class="card">
-                <h3>Local AI Research</h3>
-                <p>Exploring the potential of running Large Language Models on personal hardware and optimizing GGUF workflows.</p>
-            </div>
-        </section>
-
-        <footer>
-            <div class="social-links">
-                <a href="#">GitHub</a>
-                <a href="#">Twitter</a>
-                <a href="https://www.youtube.com/@anstire">YouTube</a>
-            </div>
-            <p>&copy; 2026 Anstire. Built with React & Passion.</p>
-        </footer>
+  <nav>
+    <a href="/" class="logo">ANSTIRE</a>
+    <div class="links">
+      <a href="/tools/">Tools</a>
+      <a href="/source-code/">Arena</a>
+      <a href="/about/">Terminal</a>
+      <a href="/contact/">Comms</a>
     </div>
+  </nav>
 
+  <div class="hero">
+    <h1>BUILDING SYSTEMS</h1>
+    <p>Algorithms · Physics Simulations · Scalable Architecture</p>
+    <a href="/tools/" class="cta">Enter The Lab</a>
+  </div>
+
+  <script>
+    // Simplified Breathing Background for Hero
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
+    function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+    
+    let time = 0;
+    function draw() {
+      ctx.fillStyle = 'rgba(5, 5, 5, 0.2)';
+      ctx.fillRect(0, 0, W, H);
+      time += 0.01;
+      
+      const cx = W/2, cy = H/2;
+      for(let i = 0; i < 200; i++) {
+        const angle = i * 0.1 + time;
+        const r = i * 3;
+        const x = cx + Math.cos(angle) * r;
+        const y = cy + Math.sin(angle) * r;
+        
+        ctx.fillStyle = `hsla(${180 + Math.sin(i*0.05)*50}, 100%, 50%, 0.5)`;
+        ctx.beginPath();
+        ctx.arc(x, y, 2, 0, Math.PI*2);
+        ctx.fill();
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+  </script>
 </body>
 </html>

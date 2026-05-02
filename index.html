@@ -5,25 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Anstire | Systems & Code</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
-    body { background: #050505; color: #fff; overflow-x: hidden; }
+    /* UNIVERSAL GLASSMORPHISM & THEME CSS */
+    :root {
+      --bg-base: #050508;
+      --text-main: #f5f5f7;
+      --glass-bg: rgba(20, 20, 25, 0.4);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+      --accent: #00ffff;
+      --input-bg: rgba(0, 0, 0, 0.3);
+    }
+    [data-theme="light"] {
+      --bg-base: #f5f5f7;
+      --text-main: #1d1d1f;
+      --glass-bg: rgba(255, 255, 255, 0.6);
+      --glass-border: rgba(0, 0, 0, 0.05);
+      --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+      --accent: #0066cc;
+      --input-bg: rgba(255, 255, 255, 0.5);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg-base); color: var(--text-main); min-height: 100vh; overflow-x: hidden; transition: 0.4s ease; }
     
-    /* Navigation */
-    nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; z-index: 100; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,255,255,0.1); }
-    .logo { font-size: 24px; font-weight: bold; color: #00ffff; text-shadow: 0 0 10px rgba(0,255,255,0.5); letter-spacing: 2px; text-decoration: none; }
-    .links a { color: #fff; text-decoration: none; margin-left: 30px; font-size: 14px; text-transform: uppercase; transition: 0.3s; }
-    .links a:hover { color: #b478ff; text-shadow: 0 0 10px rgba(180,120,255,0.8); }
+    /* NAV */
+    nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; z-index: 100; background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border); transition: 0.4s ease; }
+    .logo { font-size: 22px; font-weight: 700; color: var(--text-main); text-decoration: none; letter-spacing: 1px; font-family: 'Courier New', monospace;}
+    .nav-controls { display: flex; align-items: center; gap: 30px; }
+    .links a { color: var(--text-main); text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.3s; margin-left: 20px; text-transform: uppercase;}
+    .links a:hover { color: var(--accent); }
+    .theme-btn { background: var(--input-bg); border: 1px solid var(--glass-border); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 600; backdrop-filter: blur(10px); transition: 0.3s; }
+    .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-    /* Hero Section */
-    .hero { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 10; pointer-events: none; }
-    h1 { font-size: 4rem; letter-spacing: 5px; margin-bottom: 10px; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
-    p { font-size: 1.2rem; color: #aaa; letter-spacing: 2px; margin-bottom: 40px; text-transform: uppercase; }
-    .cta { pointer-events: auto; padding: 15px 40px; background: transparent; border: 1px solid #00ffff; color: #00ffff; font-size: 16px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; text-decoration: none; }
-    .cta:hover { background: #00ffff; color: #000; box-shadow: 0 0 20px #00ffff; }
-
-    /* Canvas Background */
+    /* HERO SPECIFIC */
+    .hero { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 10; pointer-events: none; text-align: center;}
+    h1 { font-size: 4rem; letter-spacing: 5px; margin-bottom: 10px; font-family: 'Courier New', monospace; text-shadow: 0 0 20px rgba(0, 255, 255, 0.2); }
+    p { font-size: 1.2rem; color: var(--text-main); opacity: 0.7; letter-spacing: 2px; margin-bottom: 40px; text-transform: uppercase; font-family: 'Courier New', monospace;}
+    .cta { pointer-events: auto; padding: 15px 40px; background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--accent); color: var(--text-main); font-size: 16px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; text-decoration: none; border-radius: 8px;}
+    .cta:hover { background: var(--accent); color: #000; box-shadow: 0 0 20px var(--accent); }
     #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
   </style>
+  <script>
+    // UNIVERSAL THEME SCRIPT (Put in <head> to prevent flashing)
+    const savedTheme = localStorage.getItem('anstire_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  </script>
 </head>
 <body>
 
@@ -31,11 +56,13 @@
 
   <nav>
     <a href="/" class="logo">ANSTIRE</a>
-    <div class="links">
-      <a href="/tools/">Tools</a>
-      <a href="/source-code/">Arena</a>
-      <a href="/about/">Terminal</a>
-      <a href="/contact/">Comms</a>
+    <div class="nav-controls">
+      <div class="links">
+        <a href="/tools/">Tools</a>
+        <a href="/source-code/">Arena</a>
+        <a href="/about/">About</a>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">Light Mode</button>
     </div>
   </nav>
 
@@ -46,30 +73,36 @@
   </div>
 
   <script>
-    // Simplified Breathing Background for Hero
+    // Theme Toggle Logic
+    document.getElementById('themeBtn').innerText = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('anstire_theme', next);
+      document.getElementById('themeBtn').innerText = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+    }
+
+    // Hero Background Animation (Phyllotaxis Breathing)
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     let W, H;
     function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
     window.addEventListener('resize', resize); resize();
-    
     let time = 0;
     function draw() {
-      ctx.fillStyle = 'rgba(5, 5, 5, 0.2)';
-      ctx.fillRect(0, 0, W, H);
-      time += 0.01;
-      
+      ctx.clearRect(0, 0, W, H);
+      time += 0.005;
       const cx = W/2, cy = H/2;
-      for(let i = 0; i < 200; i++) {
+      for(let i = 0; i < 250; i++) {
         const angle = i * 0.1 + time;
-        const r = i * 3;
+        const r = i * 4;
         const x = cx + Math.cos(angle) * r;
         const y = cy + Math.sin(angle) * r;
-        
-        ctx.fillStyle = `hsla(${180 + Math.sin(i*0.05)*50}, 100%, 50%, 0.5)`;
-        ctx.beginPath();
-        ctx.arc(x, y, 2, 0, Math.PI*2);
-        ctx.fill();
+        ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' 
+          ? `hsla(${180 + Math.sin(i*0.05)*50}, 100%, 50%, 0.3)` 
+          : `hsla(${200 + Math.sin(i*0.05)*50}, 100%, 40%, 0.2)`;
+        ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI*2); ctx.fill();
       }
       requestAnimationFrame(draw);
     }

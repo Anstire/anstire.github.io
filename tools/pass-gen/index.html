@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Generator | Anstire</title>
+  <style>
+    /* PASTE UNIVERSAL GLASSMORPHISM & THEME CSS HERE */
+    
+    /* TOOL SPECIFIC CSS */
+    .container { padding: 120px 20px 80px; max-width: 600px; margin: 0 auto; position: relative; z-index: 10; }
+    .tool-wrapper { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 40px; box-shadow: var(--glass-shadow); text-align: center; }
+    
+    .tool-title { font-size: 2rem; font-weight: 700; margin-bottom: 30px; font-family: 'Courier New', monospace; color: var(--accent); }
+    
+    input { width: 100%; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--glass-border); padding: 15px; margin-bottom: 20px; border-radius: 12px; font-size: 16px; outline: none; text-align: center; }
+    input:focus { border-color: var(--accent); }
+    
+    button { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 16px; text-transform: uppercase; margin-bottom: 20px;}
+    button:hover { opacity: 0.8; transform: scale(0.98); }
+    
+    .output-box { background: var(--input-bg); border: 1px solid var(--glass-border); padding: 20px; border-radius: 12px; font-size: 24px; font-weight: bold; min-height: 70px; display: flex; align-items: center; justify-content: center; cursor: pointer; word-break: break-all; transition: 0.2s;}
+    .output-box:hover { border-color: var(--accent); }
+  </style>
+  <script>
+    const savedTheme = localStorage.getItem('anstire_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  </script>
+</head>
+<body>
+
+  <!-- PASTE NAV HERE -->
+
+  <div class="container">
+    <div class="tool-wrapper">
+      <div class="tool-title">Pass-Gen</div>
+      
+      <label style="display:block; text-align:left; margin-bottom:8px; opacity:0.7; font-size:12px; text-transform:uppercase;">Password Length</label>
+      <input type="number" id="passLength" value="16" min="8" max="128">
+      
+      <button onclick="generatePassword()">Generate Secure Key</button>
+      
+      <div class="output-box" id="passOutput" onclick="copyPass()" title="Click to copy">
+        Awaiting Generation...
+      </div>
+      <p style="margin-top: 15px; font-size: 12px; opacity: 0.5;">Click the password to copy it to your clipboard.</p>
+    </div>
+  </div>
+
+  <script>
+    // PASTE THEME TOGGLE LOGIC HERE
+    
+    function generatePassword() {
+      const length = document.getElementById('passLength').value;
+      const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
+      let pass = "";
+      for (let i = 0; i < length; ++i) {
+        pass += charset.charAt(Math.floor(Math.random() * charset.length));
+      }
+      document.getElementById('passOutput').innerText = pass;
+    }
+
+    function copyPass() {
+      const pass = document.getElementById('passOutput').innerText;
+      if (pass !== "Awaiting Generation...") {
+        navigator.clipboard.writeText(pass);
+        document.getElementById('passOutput').innerText = "COPIED TO CLIPBOARD!";
+        setTimeout(() => document.getElementById('passOutput').innerText = pass, 1500);
+      }
+    }
+  </script>
+</body>
+</html>

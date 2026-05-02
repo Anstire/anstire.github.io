@@ -1,346 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Anstire | Utility Lab</title>
-  <style>
-    /* 
-      1. THEME VARIABLES (Apple-like Sleekness)
-      Using British English spelling conventions for standardisation.
-    */
-    :root {
-      --bg-base: #050508;
-      --bg-gradient: radial-gradient(circle at top right, #1a1a2e 0%, #050508 100%);
-      --text-main: #f5f5f7;
-      --text-muted: #a1a1a6;
-      --glass-bg: rgba(30, 30, 35, 0.4);
-      --glass-border: rgba(255, 255, 255, 0.08);
-      --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-      --accent: #00e5ff;
-      --accent-hover: #b478ff;
-      --input-bg: rgba(0, 0, 0, 0.3);
-    }
-
-    [data-theme="light"] {
-      --bg-base: #f5f5f7;
-      --bg-gradient: radial-gradient(circle at top right, #ffffff 0%, #e8e8ed 100%);
-      --text-main: #1d1d1f;
-      --text-muted: #86868b;
-      --glass-bg: rgba(255, 255, 255, 0.6);
-      --glass-border: rgba(0, 0, 0, 0.05);
-      --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-      --accent: #0066cc;
-      --accent-hover: #8833ff;
-      --input-bg: rgba(255, 255, 255, 0.5);
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+<style>
+    /* ADD TO UNIVERSAL CSS */
+    .container { padding: 120px 50px 80px; max-width: 1300px; margin: 0 auto; position: relative; z-index: 10; }
+    .header { font-size: 2.5rem; font-weight: 700; margin-bottom: 40px; letter-spacing: -0.5px; font-family: 'Courier New', monospace; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
     
-    body { 
-      background-color: var(--bg-base); 
-      background-image: var(--bg-gradient);
-      color: var(--text-main); 
-      min-height: 100vh; 
-      overflow-x: hidden; 
-      transition: background 0.4s ease, color 0.4s ease;
-    }
-    
-    /* 2. NAVIGATION & THEME TOGGLE */
-    nav { 
-      position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; z-index: 100; 
-      background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border); 
-      transition: all 0.4s ease;
-    }
-    .logo { font-size: 22px; font-weight: 700; color: var(--text-main); text-decoration: none; letter-spacing: 1px; }
-    .nav-controls { display: flex; align-items: center; gap: 30px; }
-    .links a { color: var(--text-main); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.3s; }
-    .links a:hover { color: var(--accent); }
-    
-    .theme-btn {
-      background: var(--input-bg); border: 1px solid var(--glass-border); color: var(--text-main);
-      padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 600;
-      backdrop-filter: blur(10px); transition: 0.3s;
-    }
-    .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-    /* 3. PREMIUM GLASSMORPHISM GRID */
-    .container { padding: 120px 50px 80px; max-width: 1300px; margin: 0 auto; }
-    .header { font-size: 2.5rem; font-weight: 700; margin-bottom: 40px; letter-spacing: -0.5px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 30px; }
-    
-    .glass-card { 
-      background: var(--glass-bg); 
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); 
-      border: 1px solid var(--glass-border); 
-      border-radius: 24px; padding: 30px; 
-      box-shadow: var(--glass-shadow);
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-    }
-    .glass-card:hover { transform: translateY(-5px); }
-    
-    .card-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 20px; color: var(--accent); display: flex; justify-content: space-between;}
-    
-    /* 4. INPUTS & BUTTONS (Minimal Flat Design) */
-    input, textarea, select { 
-      width: 100%; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--glass-border); 
-      padding: 12px 16px; margin-bottom: 15px; border-radius: 12px; font-size: 14px; outline: none; 
-      backdrop-filter: blur(5px); transition: border-color 0.2s;
-    }
-    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
-    
-    .row { display: flex; gap: 10px; margin-bottom: 15px; }
-    .row input { margin-bottom: 0; }
-    
-    button.action-btn { 
-      width: 100%; padding: 12px; background: var(--accent); color: #fff; border: none; border-radius: 12px; 
-      font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px;
-    }
-    button.action-btn:hover { opacity: 0.8; transform: scale(0.98); }
-    button.secondary-btn { background: var(--input-bg); border: 1px solid var(--glass-border); color: var(--text-main); }
-    button.secondary-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-    .output-box { 
-      background: var(--input-bg); border: 1px solid var(--glass-border); padding: 16px; 
-      border-radius: 12px; font-size: 15px; font-weight: 500; min-height: 52px; 
-      display: flex; align-items: center; justify-content: center; text-align: center;
-      word-break: break-all;
-    }
+    .glass-card { background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 30px; box-shadow: var(--glass-shadow); transition: 0.3s; display: flex; flex-direction: column; text-decoration: none; color: var(--text-main); }
+    .glass-card:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 10px 30px rgba(0,255,255,0.1); }
+    .glass-card h3 { font-size: 1.5rem; margin-bottom: 10px; color: var(--accent); }
+    .glass-card p { opacity: 0.7; font-size: 14px; line-height: 1.5; }
   </style>
 </head>
 <body>
-
-  <!-- NAVIGATION & THEME TOGGLE -->
-  <nav>
-    <a href="/" class="logo">ANSTIRE</a>
-    <div class="nav-controls">
-      <div class="links">
-        <a href="/tools/">Tools</a>
-        <a href="/about/">About</a>
-      </div>
-      <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">Light Mode</button>
-    </div>
-  </nav>
+  <!-- NAV GOES HERE -->
 
   <div class="container">
     <div class="header">Utility Lab</div>
     <div class="grid">
       
-      <!-- 1. WORD & CHARACTER COUNTER -->
-      <div class="glass-card">
-        <div class="card-title">Text Analyser</div>
-        <textarea id="textInput" rows="4" placeholder="Type or paste text here..." oninput="countText()"></textarea>
-        <div class="row">
-          <div class="output-box" style="flex: 1;"><span id="wordCount">0</span>&nbsp;Words</div>
-          <div class="output-box" style="flex: 1;"><span id="charCount">0</span>&nbsp;Chars</div>
-        </div>
-      </div>
+      <a href="/tools/pass-gen/" class="glass-card">
+        <h3>Password Generator</h3>
+        <p>Generate highly secure, cryptographically random passwords instantly.</p>
+      </a>
 
-      <!-- 2. PASSWORD GENERATOR -->
-      <div class="glass-card">
-        <div class="card-title">Password Generator</div>
-        <div class="row">
-          <input type="number" id="passLength" value="16" min="8" max="64" style="flex: 1;">
-          <button class="action-btn" onclick="generatePassword()" style="flex: 2;">Generate</button>
-        </div>
-        <div class="output-box" id="passOutput" style="cursor: pointer;" onclick="copyPass()" title="Click to copy">Click Generate</div>
-      </div>
+      <a href="/tools/text-analyzer/" class="glass-card">
+        <h3>Text Analyzer</h3>
+        <p>Real-time word, character, and reading-time calculations.</p>
+      </a>
 
-      <!-- 3. STOPWATCH -->
-      <div class="glass-card">
-        <div class="card-title">Stopwatch</div>
-        <div class="output-box" style="font-size: 2rem; font-variant-numeric: tabular-nums;" id="stopwatchDisplay">00:00:00.00</div>
-        <div class="row" style="margin-top: 15px;">
-          <button class="action-btn" id="startStopBtn" onclick="toggleStopwatch()">Start</button>
-          <button class="action-btn secondary-btn" onclick="resetStopwatch()">Reset</button>
-        </div>
-      </div>
-
-      <!-- 4. AGE CALCULATOR -->
-      <div class="glass-card">
-        <div class="card-title">Age Calculator</div>
-        <input type="date" id="dobInput">
-        <button class="action-btn" onclick="calculateAge()" style="margin-bottom: 15px;">Calculate Age</button>
-        <div class="output-box" id="ageOutput">Select your DOB</div>
-      </div>
-
-      <!-- 5. DATE DIFFERENCE -->
-      <div class="glass-card">
-        <div class="card-title">Date Difference</div>
-        <div class="row">
-          <input type="date" id="date1">
-          <input type="date" id="date2">
-        </div>
-        <button class="action-btn" onclick="calcDateDiff()" style="margin-bottom: 15px;">Calculate Days</button>
-        <div class="output-box" id="dateDiffOutput">Select two dates</div>
-      </div>
-
-      <!-- 6. UNIT CONVERTER (Bytes) -->
-      <div class="glass-card">
-        <div class="card-title">Data Converter</div>
-        <div class="row">
-          <input type="number" id="dataInput" placeholder="Value" oninput="convertData()">
-          <select id="dataUnit" onchange="convertData()">
-            <option value="MB">Megabytes (MB)</option>
-            <option value="GB">Gigabytes (GB)</option>
-            <option value="TB">Terabytes (TB)</option>
-          </select>
-        </div>
-        <div class="output-box" id="dataOutput">0 Bytes</div>
-      </div>
+      <a href="/tools/stopwatch/" class="glass-card">
+        <h3>Precision Stopwatch</h3>
+        <p>Millisecond-accurate timer with lap functionality.</p>
+      </a>
 
     </div>
   </div>
 
-  <script>
-    /* =========================================
-       THEME MANAGEMENT (Saved to LocalStorage)
-       ========================================= */
-    function initTheme() {
-      const savedTheme = localStorage.getItem('anstire_theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', savedTheme);
-      updateThemeBtn(savedTheme);
-    }
-
-    function toggleTheme() {
-      const currentTheme = document.documentElement.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', newTheme);
-      localStorage.setItem('anstire_theme', newTheme);
-      updateThemeBtn(newTheme);
-    }
-
-    function updateThemeBtn(theme) {
-      document.getElementById('themeBtn').innerText = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
-    }
-    
-    // Run on load
-    initTheme();
-
-    /* =========================================
-       1. TEXT ANALYSER
-       ========================================= */
-    function countText() {
-      const text = document.getElementById('textInput').value;
-      const chars = text.length;
-      const words = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
-      document.getElementById('charCount').innerText = chars;
-      document.getElementById('wordCount').innerText = words;
-    }
-
-    /* =========================================
-       2. PASSWORD GENERATOR
-       ========================================= */
-    function generatePassword() {
-      const length = document.getElementById('passLength').value;
-      const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
-      let pass = "";
-      for (let i = 0, n = charset.length; i < length; ++i) {
-        pass += charset.charAt(Math.floor(Math.random() * n));
-      }
-      document.getElementById('passOutput').innerText = pass;
-    }
-
-    function copyPass() {
-      const pass = document.getElementById('passOutput').innerText;
-      if (pass !== "Click Generate") {
-        navigator.clipboard.writeText(pass);
-        document.getElementById('passOutput').innerText = "Copied!";
-        setTimeout(() => document.getElementById('passOutput').innerText = pass, 1500);
-      }
-    }
-
-    /* =========================================
-       3. STOPWATCH
-       ========================================= */
-    let startTime, updatedTime, difference, tInterval;
-    let running = false;
-    const display = document.getElementById('stopwatchDisplay');
-    const startBtn = document.getElementById('startStopBtn');
-
-    function toggleStopwatch() {
-      if (!running) {
-        startTime = new Date().getTime() - (difference || 0);
-        tInterval = setInterval(getShowTime, 10);
-        running = true;
-        startBtn.innerText = "Stop";
-        startBtn.classList.add("secondary-btn");
-      } else {
-        clearInterval(tInterval);
-        running = false;
-        startBtn.innerText = "Start";
-        startBtn.classList.remove("secondary-btn");
-      }
-    }
-
-    function resetStopwatch() {
-      clearInterval(tInterval);
-      running = false;
-      difference = 0;
-      display.innerHTML = "00:00:00.00";
-      startBtn.innerText = "Start";
-      startBtn.classList.remove("secondary-btn");
-    }
-
-    function getShowTime() {
-      updatedTime = new Date().getTime();
-      difference = updatedTime - startTime;
-      let hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      let minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      let seconds = Math.floor((difference % (1000 * 60)) / 1000);
-      let milliseconds = Math.floor((difference % 1000) / 10);
-      
-      hours = (hours < 10) ? "0" + hours : hours;
-      minutes = (minutes < 10) ? "0" + minutes : minutes;
-      seconds = (seconds < 10) ? "0" + seconds : seconds;
-      milliseconds = (milliseconds < 10) ? "0" + milliseconds : milliseconds;
-      display.innerHTML = hours + ":" + minutes + ":" + seconds + "." + milliseconds;
-    }
-
-    /* =========================================
-       4. AGE CALCULATOR
-       ========================================= */
-    function calculateAge() {
-      const dobStr = document.getElementById('dobInput').value;
-      if (!dobStr) return;
-      
-      const dob = new Date(dobStr);
-      const diff_ms = Date.now() - dob.getTime();
-      const age_dt = new Date(diff_ms); 
-      const age = Math.abs(age_dt.getUTCFullYear() - 1970);
-      
-      document.getElementById('ageOutput').innerText = age + " Years Old";
-    }
-
-    /* =========================================
-       5. DATE DIFFERENCE
-       ========================================= */
-    function calcDateDiff() {
-      const d1 = new Date(document.getElementById('date1').value);
-      const d2 = new Date(document.getElementById('date2').value);
-      
-      if (isNaN(d1) || isNaN(d2)) return;
-      
-      const diffTime = Math.abs(d2 - d1);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-      document.getElementById('dateDiffOutput').innerText = diffDays + " Days Apart";
-    }
-
-    /* =========================================
-       6. DATA UNIT CONVERTER
-       ========================================= */
-    function convertData() {
-      const val = parseFloat(document.getElementById('dataInput').value) || 0;
-      const unit = document.getElementById('dataUnit').value;
-      let bytes = 0;
-      
-      if(unit === 'MB') bytes = val * 1048576;
-      if(unit === 'GB') bytes = val * 1073741824;
-      if(unit === 'TB') bytes = val * 1099511627776;
-
-      // Format with commas
-      document.getElementById('dataOutput').innerText = bytes.toLocaleString() + " Bytes";
-    }
-  </script>
+  <!-- THEME TOGGLE SCRIPT GOES HERE -->
 </body>
 </html>

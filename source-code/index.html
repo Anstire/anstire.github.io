@@ -3,52 +3,219 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Anstire | Arena</title>
+  <title>Source Code — Anstire</title>
+  <meta name="description" content="Browse the full source code from every Anstire Code Clash. Study, fork, and learn from each AI's output.">
+  <link rel="stylesheet" href="/assets/css/global.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
-    body { background: #050505; color: #fff; min-height: 100vh; }
-    
-    nav { padding: 20px 50px; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0,255,255,0.1); }
-    .logo { font-weight: bold; color: #00ffff; text-decoration: none; }
-    .links a { color: #fff; text-decoration: none; margin-left: 30px; text-transform: uppercase; font-size: 14px; }
+    .src-hero { padding: calc(var(--nav-height) + 72px) 24px 64px; max-width: 1200px; margin: 0 auto; }
 
-    .container { padding: 80px 50px; max-width: 1000px; margin: 0 auto; text-align: center; }
-    h1 { color: #00ffff; font-size: 3rem; margin-bottom: 20px; letter-spacing: 3px; }
-    p { color: #aaa; margin-bottom: 50px; font-size: 1.1rem; }
+    .placeholder-notice {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      background: rgba(var(--accent-rgb), 0.06);
+      border: 1px dashed rgba(var(--accent-rgb), 0.25);
+      font-size: 13.5px; color: var(--text-secondary);
+      margin-bottom: 40px;
+    }
 
-    .video-card { background: rgba(255,255,255,0.05); border: 1px solid #333; padding: 40px; border-radius: 8px; margin-bottom: 30px; }
-    .video-card h2 { color: #b478ff; margin-bottom: 10px; }
-    
-    .btn { display: inline-block; padding: 12px 30px; background: #00ffff; color: #000; font-weight: bold; text-decoration: none; border-radius: 4px; margin-top: 20px; transition: 0.2s; }
-    .btn:hover { background: #fff; box-shadow: 0 0 15px #00ffff; }
+    /* Search */
+    .search-row { display: flex; gap: 12px; align-items: center; margin-bottom: 40px; }
+    .search-wrap { flex: 1; position: relative; }
+    .search-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); pointer-events: none; }
+    .search-wrap .input { padding-left: 42px; }
+    .lang-filter { min-width: 160px; }
+
+    /* Clash entries */
+    .clash-entries { display: flex; flex-direction: column; gap: 16px; }
+
+    .entry-card { padding: 28px 32px; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; }
+    @media (max-width: 640px) { .entry-card { grid-template-columns: 1fr; } }
+
+    .entry-left {}
+    .entry-top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+    .entry-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 0.08em; color: var(--text-tertiary); text-transform: uppercase; }
+    .entry-cat { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(var(--accent-rgb), 0.1); color: var(--accent); border: 1px solid rgba(var(--accent-rgb), 0.2); }
+    .entry-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -0.02em; color: var(--text-primary); margin-bottom: 8px; }
+    .entry-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 14px; }
+    .entry-langs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .lang-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--glass-border); font-family: 'SF Mono', monospace; }
+    .model-chip-sm { padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 500; background: var(--bg-elevated); color: var(--text-tertiary); border: 1px solid var(--glass-border); }
+
+    .entry-actions { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+    @media (max-width: 640px) { .entry-actions { flex-direction: row; align-items: flex-start; } }
+
+    .entry-stat { text-align: right; font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px; }
+    .entry-stat strong { display: block; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; color: var(--text-primary); }
+
+    /* Code preview strip */
+    .code-preview {
+      background: var(--bg-elevated);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      line-height: 1.8;
+      color: var(--text-tertiary);
+      margin-top: 16px;
+      overflow: hidden;
+      max-height: 100px;
+      position: relative;
+    }
+    .code-preview::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 36px; background: linear-gradient(transparent, var(--bg-elevated)); }
+    .code-kw { color: var(--accent); }
+    .code-str { color: var(--accent-2); }
+    .code-fn { color: #E6B95C; }
+    .code-cm { color: var(--text-tertiary); }
   </style>
 </head>
 <body>
+  <header id="site-nav"></header>
 
-  <nav>
-    <a href="/" class="logo">ANSTIRE</a>
-    <div class="links">
-      <a href="/tools/">Tools</a>
-      <a href="/source-code/">Arena</a>
-    </div>
-  </nav>
-
-  <div class="container">
-    <h1>AI CODE CLASH</h1>
-    <p>Evaluating LLM Logic, Physics Engines, and Code Efficiency.</p>
-
-    <div class="video-card">
-      <h2>The Render Engine Battles</h2>
-      <p>Watch standard AI models attempt complex mathematical rendering against custom-built frame-by-frame processing.</p>
-      <a href="#" class="btn">Watch on YouTube</a>
+  <main class="page-wrapper">
+    <div class="src-hero">
+      <p class="tag anim d1">💻 Open Codebase</p>
+      <h1 class="display-2 anim d2" style="margin-top: 20px; margin-bottom: 16px;">Source <span class="gradient-text">Code</span></h1>
+      <p class="anim d3" style="font-size: 17px; color: var(--text-secondary); max-width: 560px; line-height: 1.7;">
+        Every line of code from every Code Clash — documented, archived, and open for you to study and fork.
+      </p>
     </div>
 
-    <div class="video-card">
-      <h2>Open Source Vault</h2>
-      <p>Access the raw rendering scripts and component libraries used in the clash series.</p>
-      <a href="https://github.com/anstire" class="btn" target="_blank">View GitHub</a>
-    </div>
-  </div>
+    <section class="section" style="padding-top: 0;">
 
+      <div class="placeholder-notice anim d1">
+        <span>🚧</span> Source code entries will appear here as Code Clashes are published. Placeholder layouts shown below.
+      </div>
+
+      <!-- Search -->
+      <div class="search-row anim d2">
+        <div class="search-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" class="input" placeholder="Search clashes, languages, topics…" oninput="searchEntries(this.value)">
+        </div>
+        <select class="input lang-filter" onchange="filterLang(this.value)">
+          <option value="">All Languages</option>
+          <option value="python">Python</option>
+          <option value="typescript">TypeScript</option>
+          <option value="rust">Rust</option>
+          <option value="go">Go</option>
+          <option value="cpp">C++</option>
+        </select>
+      </div>
+
+      <!-- Entries -->
+      <div class="clash-entries" id="entriesContainer">
+
+        <div class="glass-card entry-card anim d1" data-lang="python typescript">
+          <div class="entry-left">
+            <div class="entry-top">
+              <span class="entry-num">Clash #001</span>
+              <span class="entry-cat">Sorting Algorithms</span>
+            </div>
+            <div class="entry-title">Quicksort vs Mergesort Under Constraints</div>
+            <div class="entry-desc">Three models tackle optimal sorting with strict O(n log n) time and O(1) space targets. Watch how each approaches in-place optimizations differently.</div>
+            <div class="entry-langs">
+              <span class="lang-chip">🐍 Python</span>
+              <span class="lang-chip">TS TypeScript</span>
+              <span class="model-chip-sm">GPT-4o</span>
+              <span class="model-chip-sm">Claude 3.5</span>
+              <span class="model-chip-sm">Gemini 1.5</span>
+            </div>
+            <div class="code-preview">
+              <span class="code-cm"># Claude 3.5 Sonnet — Quicksort implementation</span><br>
+              <span class="code-kw">def</span> <span class="code-fn">quicksort</span>(arr: list, lo: int = 0, hi: int = <span class="code-kw">None</span>) -> list:<br>
+              &nbsp;&nbsp;<span class="code-kw">if</span> hi <span class="code-kw">is None</span>: hi = len(arr) - 1<br>
+              &nbsp;&nbsp;<span class="code-kw">if</span> lo &lt; hi:<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;pivot = <span class="code-fn">partition</span>(arr, lo, hi)
+            </div>
+          </div>
+          <div class="entry-actions">
+            <div class="entry-stat"><strong>3</strong> Solutions</div>
+            <a href="#" class="btn btn-primary btn-sm">View Code</a>
+            <a href="#" class="btn btn-ghost btn-sm">Watch Clash</a>
+          </div>
+        </div>
+
+        <div class="glass-card entry-card anim d2" data-lang="typescript">
+          <div class="entry-left">
+            <div class="entry-top">
+              <span class="entry-num">Clash #002</span>
+              <span class="entry-cat">UI Generation</span>
+            </div>
+            <div class="entry-title">Premium Dashboard Component in 60 Seconds</div>
+            <div class="entry-desc">Pixel-perfect, accessible React dashboard components generated from a single-line prompt. Judged on visual quality, accessibility score, and clean code structure.</div>
+            <div class="entry-langs">
+              <span class="lang-chip">⚛️ React</span>
+              <span class="lang-chip">TS TypeScript</span>
+              <span class="model-chip-sm">GPT-4o</span>
+              <span class="model-chip-sm">Gemini 1.5</span>
+            </div>
+            <div class="code-preview">
+              <span class="code-cm">// GPT-4o — Dashboard Card Component</span><br>
+              <span class="code-kw">const</span> <span class="code-fn">DashCard</span> = ({ title, value, delta }: Props) => (<br>
+              &nbsp;&nbsp;&lt;div className=<span class="code-str">"glass-card p-6"</span>&gt;<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&lt;p className=<span class="code-str">"text-sm opacity-60"</span>&gt;{title}&lt;/p&gt;
+            </div>
+          </div>
+          <div class="entry-actions">
+            <div class="entry-stat"><strong>2</strong> Solutions</div>
+            <a href="#" class="btn btn-primary btn-sm">View Code</a>
+            <a href="#" class="btn btn-ghost btn-sm">Watch Clash</a>
+          </div>
+        </div>
+
+        <div class="glass-card entry-card anim d3" data-lang="python cpp">
+          <div class="entry-left">
+            <div class="entry-top">
+              <span class="entry-num">Clash #003</span>
+              <span class="entry-cat">Dynamic Programming</span>
+            </div>
+            <div class="entry-title">LeetCode Hard: Edit Distance & Knapsack Variants</div>
+            <div class="entry-desc">The hardest class of dynamic programming challenges. Memoization vs tabulation, space optimization, and reconstruction — all tested simultaneously.</div>
+            <div class="entry-langs">
+              <span class="lang-chip">🐍 Python</span>
+              <span class="lang-chip">⚙️ C++</span>
+              <span class="model-chip-sm">Claude 3.5</span>
+              <span class="model-chip-sm">GPT-4o</span>
+              <span class="model-chip-sm">DeepSeek</span>
+            </div>
+            <div class="code-preview">
+              <span class="code-cm"># DeepSeek R1 — Edit distance with path reconstruction</span><br>
+              <span class="code-kw">def</span> <span class="code-fn">edit_distance</span>(s1: str, s2: str) -> tuple[int, list]:<br>
+              &nbsp;&nbsp;m, n = len(s1), len(s2)<br>
+              &nbsp;&nbsp;dp = [[0] * (n + 1) <span class="code-kw">for</span> _ <span class="code-kw">in</span> range(m + 1)]
+            </div>
+          </div>
+          <div class="entry-actions">
+            <div class="entry-stat"><strong>3</strong> Solutions</div>
+            <a href="#" class="btn btn-primary btn-sm">View Code</a>
+            <a href="#" class="btn btn-ghost btn-sm">Watch Clash</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="/assets/js/global.js"></script>
+  <script>
+    function searchEntries(q) {
+      const cards = document.querySelectorAll('.entry-card');
+      q = q.toLowerCase();
+      cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(q) ? '' : 'none';
+      });
+    }
+    function filterLang(lang) {
+      const cards = document.querySelectorAll('.entry-card');
+      cards.forEach(card => {
+        const langs = (card.dataset.lang || '');
+        card.style.display = (!lang || langs.includes(lang)) ? '' : 'none';
+      });
+    }
+  </script>
 </body>
 </html>

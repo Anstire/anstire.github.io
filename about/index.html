@@ -47,9 +47,9 @@
 
     /* How it works */
     .steps { display: flex; flex-direction: column; gap: 0; margin-top: 48px; }
-    .step { display: grid; grid-template-columns: 60px 1fr; gap: 24px; padding: 32px 0; border-bottom: 1px solid var(--glass-border); }
+    .step { display: grid; grid-template-columns: 80px 1fr; gap: 28px; padding: 32px 0; border-bottom: 1px solid var(--glass-border); align-items: start; }
     .step:last-child { border-bottom: none; }
-    .step-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 40px; background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-top: 4px; }
+    .step-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 36px; background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.1; padding-top: 3px; display: block; overflow: visible; }
     .step-content h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; margin-bottom: 10px; color: var(--text-primary); }
     .step-content p { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
 
@@ -170,37 +170,31 @@
           <div class="model-logo">🟢</div>
           <div class="model-name">GPT-4o</div>
           <div class="model-sub">OpenAI</div>
-          <div class="model-wins">🏆 4 wins</div>
         </div>
         <div class="glass-card model-card anim d2">
           <div class="model-logo">🟣</div>
           <div class="model-name">Claude 3.5 Sonnet</div>
           <div class="model-sub">Anthropic</div>
-          <div class="model-wins">🏆 5 wins</div>
         </div>
         <div class="glass-card model-card anim d3">
           <div class="model-logo">🔵</div>
           <div class="model-name">Gemini 1.5 Pro</div>
           <div class="model-sub">Google DeepMind</div>
-          <div class="model-wins">🏆 2 wins</div>
         </div>
         <div class="glass-card model-card anim d4">
           <div class="model-logo">🔴</div>
           <div class="model-name">DeepSeek R1</div>
           <div class="model-sub">DeepSeek AI</div>
-          <div class="model-wins">🏆 3 wins</div>
         </div>
         <div class="glass-card model-card anim d5">
           <div class="model-logo">⚪</div>
           <div class="model-name">Mistral Large</div>
           <div class="model-sub">Mistral AI</div>
-          <div class="model-wins">🏆 1 win</div>
         </div>
         <div class="glass-card model-card anim d5" style="animation-delay: 0.52s;">
           <div class="model-logo">🟡</div>
           <div class="model-name">Grok 2</div>
           <div class="model-sub">xAI</div>
-          <div class="model-wins">🏆 0 wins</div>
         </div>
       </div>
     </section>

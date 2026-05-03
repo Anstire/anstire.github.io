@@ -1,40 +1,114 @@
-<style>
-    /* ADD TO UNIVERSAL CSS */
-    .container { padding: 120px 50px 80px; max-width: 1300px; margin: 0 auto; position: relative; z-index: 10; }
-    .header { font-size: 2.5rem; font-weight: 700; margin-bottom: 40px; letter-spacing: -0.5px; font-family: 'Courier New', monospace; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
-    
-    .glass-card { background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 30px; box-shadow: var(--glass-shadow); transition: 0.3s; display: flex; flex-direction: column; text-decoration: none; color: var(--text-main); }
-    .glass-card:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 10px 30px rgba(0,255,255,0.1); }
-    .glass-card h3 { font-size: 1.5rem; margin-bottom: 10px; color: var(--accent); }
-    .glass-card p { opacity: 0.7; font-size: 14px; line-height: 1.5; }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dev Tools — Anstire</title>
+  <meta name="description" content="Free browser-based developer tools — password generator, word counter, date difference, unit converter, JSON formatter and more.">
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <style>
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 48px;
+    }
+    @media (max-width: 860px) { .tools-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) { .tools-grid { grid-template-columns: 1fr; } }
+
+    .tool-card {
+      padding: 32px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      text-decoration: none;
+      color: inherit;
+    }
+    .tool-icon-wrap {
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.15), rgba(var(--accent-2-rgb), 0.12));
+      border: 1px solid rgba(var(--accent-rgb), 0.2);
+    }
+    .tool-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 10px; color: var(--text-primary); letter-spacing: -0.02em; }
+    .tool-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; flex: 1; margin-bottom: 24px; }
+    .tool-link { font-size: 13px; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 4px; }
+    .tool-link::after { content: '→'; transition: transform 0.2s; }
+    .tool-card:hover .tool-link::after { transform: translateX(4px); }
+    .tool-tag { display: inline-flex; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(var(--accent-2-rgb), 0.1); color: var(--accent-2); border: 1px solid rgba(var(--accent-2-rgb), 0.2); margin-bottom: 12px; }
   </style>
 </head>
 <body>
-  <!-- NAV GOES HERE -->
+  <header id="site-nav"></header>
 
-  <div class="container">
-    <div class="header">Utility Lab</div>
-    <div class="grid">
-      
-      <a href="/tools/pass-gen/" class="glass-card">
-        <h3>Password Generator</h3>
-        <p>Generate highly secure, cryptographically random passwords instantly.</p>
-      </a>
-
-      <a href="/tools/text-analyzer/" class="glass-card">
-        <h3>Text Analyzer</h3>
-        <p>Real-time word, character, and reading-time calculations.</p>
-      </a>
-
-      <a href="/tools/stopwatch/" class="glass-card">
-        <h3>Precision Stopwatch</h3>
-        <p>Millisecond-accurate timer with lap functionality.</p>
-      </a>
-
+  <main class="page-wrapper">
+    <div class="page-header">
+      <p class="tag anim d1">🛠️ Developer Toolkit</p>
+      <h1 class="display-2 anim d2" style="margin-top: 20px; margin-bottom: 20px;">Free Dev <span class="gradient-text">Tools</span></h1>
+      <p class="anim d3" style="font-size: 18px; color: var(--text-secondary); max-width: 560px; line-height: 1.7;">
+        Browser-native tools built for speed and clarity. No sign-up, no ads, no nonsense — just tools that work.
+      </p>
     </div>
-  </div>
 
-  <!-- THEME TOGGLE SCRIPT GOES HERE -->
+    <section class="section" style="padding-top: 0;">
+      <div class="tools-grid">
+
+        <a href="/tools/pass-gen" class="glass-card tool-card anim d1">
+          <span class="tool-tag">Security</span>
+          <div class="tool-icon-wrap">🔐</div>
+          <div class="tool-name">Password Generator</div>
+          <p class="tool-desc">Generate cryptographically strong passwords with custom length, symbols, numbers, and case rules.</p>
+          <span class="tool-link">Open tool</span>
+        </a>
+
+        <a href="/tools/word-counter" class="glass-card tool-card anim d2">
+          <span class="tool-tag">Writing</span>
+          <div class="tool-icon-wrap">📝</div>
+          <div class="tool-name">Word Counter</div>
+          <p class="tool-desc">Count words, characters, sentences, paragraphs, and get an estimated reading time — instantly.</p>
+          <span class="tool-link">Open tool</span>
+        </a>
+
+        <a href="/tools/date-diff" class="glass-card tool-card anim d3">
+          <span class="tool-tag">Utility</span>
+          <div class="tool-icon-wrap">📅</div>
+          <div class="tool-name">Date Difference</div>
+          <p class="tool-desc">Calculate the exact difference between two dates in years, months, weeks, and days.</p>
+          <span class="tool-link">Open tool</span>
+        </a>
+
+        <a href="/tools/unit-converter" class="glass-card tool-card anim d4">
+          <span class="tool-tag">Math</span>
+          <div class="tool-icon-wrap">📐</div>
+          <div class="tool-name">Unit Converter</div>
+          <p class="tool-desc">Convert between length, weight, temperature, area, volume, and data units in real time.</p>
+          <span class="tool-link">Open tool</span>
+        </a>
+
+        <a href="/tools/json-formatter" class="glass-card tool-card anim d5">
+          <span class="tool-tag">Dev</span>
+          <div class="tool-icon-wrap">{ }</div>
+          <div class="tool-name">JSON Formatter</div>
+          <p class="tool-desc">Beautify, minify, and validate JSON with syntax highlighting and error detection.</p>
+          <span class="tool-link">Open tool</span>
+        </a>
+
+        <div class="glass-card tool-card anim d5" style="animation-delay: 0.52s; opacity: 0.5; cursor: default;">
+          <span class="tool-tag">Coming Soon</span>
+          <div class="tool-icon-wrap">🔮</div>
+          <div class="tool-name">More Tools</div>
+          <p class="tool-desc">Base64 encoder, regex tester, color picker, and more are on the way. Stay tuned.</p>
+          <span class="tool-link" style="color: var(--text-tertiary);">Coming soon</span>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="/assets/js/global.js"></script>
 </body>
 </html>

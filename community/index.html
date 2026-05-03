@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community — Anstire</title>
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <style>
+    .comm-hero { padding: calc(var(--nav-height) + 80px) 24px 80px; max-width: 1100px; margin: 0 auto; text-align: center; }
+    .comm-hero h1 { margin-bottom: 20px; }
+    .comm-hero p { font-size: 18px; color: var(--text-secondary); line-height: 1.75; max-width: 560px; margin: 0 auto 40px; }
+    .hero-actions { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+
+    /* Discord preview */
+    .discord-card {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-lg);
+    }
+    @media (max-width: 640px) { .discord-card { grid-template-columns: 1fr; } }
+
+    .ds-sidebar {
+      background: rgba(var(--accent-rgb), 0.04);
+      border-right: 1px solid var(--glass-border);
+      padding: 24px 0;
+    }
+    .ds-server-name { padding: 0 20px 20px; border-bottom: 1px solid var(--glass-border); margin-bottom: 16px; }
+    .ds-server-name h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: var(--text-primary); }
+    .ds-server-name p { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+
+    .ds-section { padding: 0 8px; margin-bottom: 16px; }
+    .ds-cat { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); padding: 4px 12px; margin-bottom: 6px; }
+    .ds-channel { padding: 6px 12px; border-radius: 8px; font-size: 13.5px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 8px; transition: var(--transition); }
+    .ds-channel:hover, .ds-channel.active { background: rgba(var(--accent-rgb), 0.1); color: var(--text-primary); }
+    .ds-channel.active { color: var(--accent); }
+    .ch-icon { font-size: 14px; }
+
+    .ds-main { background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); padding: 28px; display: flex; flex-direction: column; }
+    .ds-channel-header { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; color: var(--text-primary); padding-bottom: 16px; border-bottom: 1px solid var(--glass-border); margin-bottom: 24px; display: flex; align-items: center; gap: 8px; }
+
+    .ds-messages { display: flex; flex-direction: column; gap: 20px; flex: 1; }
+    .ds-msg { display: flex; gap: 12px; }
+    .ds-avatar { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; background: var(--bg-elevated); border: 1px solid var(--glass-border); }
+    .ds-msg-content {}
+    .ds-msg-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+    .ds-username { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+    .ds-bot { font-size: 10px; font-weight: 600; background: var(--accent); color: white; padding: 1px 6px; border-radius: 4px; }
+    .ds-time { font-size: 11px; color: var(--text-tertiary); }
+    .ds-text { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+    .ds-highlight { color: var(--accent); }
+    .ds-code { font-family: monospace; background: var(--bg-elevated); padding: 2px 6px; border-radius: 4px; font-size: 13px; color: var(--accent-2); }
+
+    /* Stats */
+    .comm-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 48px; max-width: 900px; margin-left: auto; margin-right: auto; }
+    @media (max-width: 640px) { .comm-stats { grid-template-columns: repeat(2, 1fr); } }
+    .comm-stat { padding: 24px; text-align: center; }
+    .comm-stat .num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 32px; letter-spacing: -0.03em; background: linear-gradient(135deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 4px; }
+    .comm-stat .lbl { font-size: 12px; color: var(--text-tertiary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; }
+
+    /* What happens */
+    .channels-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; }
+    @media (max-width: 768px) { .channels-grid { grid-template-columns: 1fr; } }
+    .ch-card { padding: 28px; }
+    .ch-name { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 12px; font-family: monospace; }
+    .ch-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; color: var(--text-primary); margin-bottom: 8px; }
+    .ch-desc { font-size: 13.5px; color: var(--text-secondary); line-height: 1.65; }
+
+    /* CTA */
+    .join-cta { text-align: center; padding: 80px 24px 0; }
+    .join-cta-inner { max-width: 580px; margin: 0 auto; padding: 56px 40px; }
+    .join-cta-inner h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(26px, 4vw, 38px); letter-spacing: -0.03em; margin-bottom: 16px; color: var(--text-primary); }
+    .join-cta-inner p { color: var(--text-secondary); font-size: 16px; margin-bottom: 28px; }
+  </style>
+</head>
+<body>
+  <header id="site-nav"></header>
+
+  <main class="page-wrapper">
+
+    <!-- HERO -->
+    <div class="comm-hero">
+      <p class="tag anim d1" style="margin-bottom: 20px;">⚡ The Arena</p>
+      <h1 class="display-2 anim d2">Join the <span class="gradient-text">community.</span></h1>
+      <p class="anim d3">Where developers, researchers, and AI enthusiasts debate code, dissect clashes, and build things together. 100% free, zero toxicity.</p>
+      <div class="hero-actions anim d4">
+        <a href="https://discord.gg/anstire" target="_blank" class="btn btn-primary">Join Discord →</a>
+        <a href="https://youtube.com/@anstire" target="_blank" class="btn btn-ghost">▶ Subscribe on YouTube</a>
+      </div>
+    </div>
+
+    <!-- Discord Mock Preview -->
+    <section class="section" style="padding-top: 0;">
+      <div class="discord-card anim d2">
+        <div class="ds-sidebar">
+          <div class="ds-server-name">
+            <h3>Anstire</h3>
+            <p>Code · Compare · Conquer</p>
+          </div>
+          <div class="ds-section">
+            <div class="ds-cat">General</div>
+            <div class="ds-channel"><span class="ch-icon">#</span> announcements</div>
+            <div class="ds-channel active"><span class="ch-icon">#</span> general-chat</div>
+            <div class="ds-channel"><span class="ch-icon">#</span> introductions</div>
+          </div>
+          <div class="ds-section">
+            <div class="ds-cat">Code Clashes</div>
+            <div class="ds-channel"><span class="ch-icon">#</span> clash-results</div>
+            <div class="ds-channel"><span class="ch-icon">#</span> your-verdict</div>
+            <div class="ds-channel"><span class="ch-icon">#</span> challenge-ideas</div>
+          </div>
+          <div class="ds-section">
+            <div class="ds-cat">Dev Corner</div>
+            <div class="ds-channel"><span class="ch-icon">#</span> code-review</div>
+            <div class="ds-channel"><span class="ch-icon">#</span> algorithms</div>
+            <div class="ds-channel"><span class="ch-icon">#</span> show-and-tell</div>
+          </div>
+        </div>
+        <div class="ds-main">
+          <div class="ds-channel-header"><span>#</span> general-chat</div>
+          <div class="ds-messages">
+            <div class="ds-msg">
+              <div class="ds-avatar">👨‍💻</div>
+              <div class="ds-msg-content">
+                <div class="ds-msg-header"><span class="ds-username">devkris_99</span><span class="ds-time">Today at 11:24 AM</span></div>
+                <div class="ds-text">just rewatched the DP clash — the way <span class="ds-highlight">@Claude</span> handled the space optimization blew my mind</div>
+              </div>
+            </div>
+            <div class="ds-msg">
+              <div class="ds-avatar">🧑‍🔬</div>
+              <div class="ds-msg-content">
+                <div class="ds-msg-header"><span class="ds-username">ml_nadia</span><span class="ds-time">Today at 11:26 AM</span></div>
+                <div class="ds-text">agreed but the GPT solution was cleaner imo, <span class="ds-code">O(n)</span> space with better variable names. it's a close call honestly</div>
+              </div>
+            </div>
+            <div class="ds-msg">
+              <div class="ds-avatar">🤖</div>
+              <div class="ds-msg-content">
+                <div class="ds-msg-header"><span class="ds-username">AnstireBot</span><span class="ds-bot">BOT</span><span class="ds-time">Today at 11:27 AM</span></div>
+                <div class="ds-text">📊 <strong>Clash #003 voting is now open!</strong> Cast your verdict at <span class="ds-highlight">anstire.github.io/source-code</span> — the community decides.</div>
+              </div>
+            </div>
+            <div class="ds-msg">
+              <div class="ds-avatar">👩‍💻</div>
+              <div class="ds-msg-content">
+                <div class="ds-msg-header"><span class="ds-username">syntaxsarah</span><span class="ds-time">Today at 11:29 AM</span></div>
+                <div class="ds-text">I actually submitted a challenge idea last week — a concurrent web scraper with rate limiting. fingers crossed it makes it into the next clash 🤞</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="comm-stats">
+        <div class="glass-card comm-stat anim d1">
+          <div class="num">500+</div>
+          <div class="lbl">Members</div>
+        </div>
+        <div class="glass-card comm-stat anim d2">
+          <div class="num">12</div>
+          <div class="lbl">Channels</div>
+        </div>
+        <div class="glass-card comm-stat anim d3">
+          <div class="num">24/7</div>
+          <div class="lbl">Active</div>
+        </div>
+        <div class="glass-card comm-stat anim d4">
+          <div class="num">100%</div>
+          <div class="lbl">Free</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Channels -->
+    <section class="section" style="padding-top: 0;">
+      <p class="label-tag anim d1">What's Inside</p>
+      <h2 class="heading-1 anim d2" style="margin-top: 10px; margin-bottom: 8px;">Every channel has a purpose</h2>
+      <div class="channels-grid">
+        <div class="glass-card ch-card anim d1">
+          <div class="ch-name"># clash-results</div>
+          <div class="ch-title">Real-Time Reactions</div>
+          <p class="ch-desc">Hot takes, analyses, and frame-by-frame debate the moment a new clash drops. This is where opinions are formed.</p>
+        </div>
+        <div class="glass-card ch-card anim d2">
+          <div class="ch-name"># your-verdict</div>
+          <div class="ch-title">Community Votes</div>
+          <p class="ch-desc">There are no declared winners on Anstire — you decide. Cast your verdict after every clash and see how the community splits.</p>
+        </div>
+        <div class="glass-card ch-card anim d3">
+          <div class="ch-name"># challenge-ideas</div>
+          <div class="ch-title">Suggest a Clash</div>
+          <p class="ch-desc">Submit your own challenge ideas. The best ones get voted up and turned into real Code Clashes. Your idea could be next.</p>
+        </div>
+        <div class="glass-card ch-card anim d4">
+          <div class="ch-name"># code-review</div>
+          <div class="ch-title">Get Your Code Reviewed</div>
+          <p class="ch-desc">Post your code for peer review from a community of developers who care about elegance and efficiency as much as you do.</p>
+        </div>
+        <div class="glass-card ch-card anim d5">
+          <div class="ch-name"># algorithms</div>
+          <div class="ch-title">Deep Algorithm Talk</div>
+          <p class="ch-desc">The nerdiest channel on the server — discuss data structures, algorithmic techniques, and mathematical beauty in code.</p>
+        </div>
+        <div class="glass-card ch-card anim d5" style="animation-delay:0.52s;">
+          <div class="ch-name"># show-and-tell</div>
+          <div class="ch-title">Share What You Built</div>
+          <p class="ch-desc">Built something cool? Share it here. Projects, tools, experiments — as long as it's made with code, it belongs.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Join CTA -->
+    <div class="join-cta">
+      <div class="glass-card join-cta-inner anim d1">
+        <h2>The arena is <span class="gradient-text">open.</span></h2>
+        <p>Join the Discord and be part of the community that decides who truly has the aura of an elite developer.</p>
+        <a href="https://discord.gg/anstire" target="_blank" class="btn btn-primary">Join Discord — It's Free →</a>
+      </div>
+    </div>
+
+    <div style="height: 88px;"></div>
+
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="/assets/js/global.js"></script>
+</body>
+</html>

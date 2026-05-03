@@ -3,71 +3,238 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Password Generator | Anstire</title>
+  <title>Password Generator — Anstire Tools</title>
+  <link rel="stylesheet" href="/assets/css/global.css">
   <style>
-    /* PASTE UNIVERSAL GLASSMORPHISM & THEME CSS HERE */
-    
-    /* TOOL SPECIFIC CSS */
-    .container { padding: 120px 20px 80px; max-width: 600px; margin: 0 auto; position: relative; z-index: 10; }
-    .tool-wrapper { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 40px; box-shadow: var(--glass-shadow); text-align: center; }
-    
-    .tool-title { font-size: 2rem; font-weight: 700; margin-bottom: 30px; font-family: 'Courier New', monospace; color: var(--accent); }
-    
-    input { width: 100%; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--glass-border); padding: 15px; margin-bottom: 20px; border-radius: 12px; font-size: 16px; outline: none; text-align: center; }
-    input:focus { border-color: var(--accent); }
-    
-    button { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 16px; text-transform: uppercase; margin-bottom: 20px;}
-    button:hover { opacity: 0.8; transform: scale(0.98); }
-    
-    .output-box { background: var(--input-bg); border: 1px solid var(--glass-border); padding: 20px; border-radius: 12px; font-size: 24px; font-weight: bold; min-height: 70px; display: flex; align-items: center; justify-content: center; cursor: pointer; word-break: break-all; transition: 0.2s;}
-    .output-box:hover { border-color: var(--accent); }
+    .tool-layout { max-width: 700px; margin: 0 auto; padding: calc(var(--nav-height) + 64px) 24px 88px; }
+    .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-tertiary); margin-bottom: 32px; }
+    .breadcrumb a { color: var(--accent); }
+    .breadcrumb span { color: var(--text-tertiary); }
+
+    .tool-card { padding: 40px; }
+
+    .pass-output {
+      background: var(--bg-elevated);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 20px;
+      letter-spacing: 0.04em;
+      color: var(--text-primary);
+      word-break: break-all;
+      line-height: 1.5;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .pass-actions { display: flex; gap: 10px; margin-bottom: 32px; }
+
+    .strength-bar { margin-bottom: 32px; }
+    .strength-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; color: var(--text-secondary); }
+    .strength-label span:last-child { font-weight: 600; }
+    .strength-track { height: 6px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; border: 1px solid var(--glass-border); }
+    .strength-fill { height: 100%; border-radius: 3px; transition: all 0.4s ease; }
+    .s-weak { width: 20%; background: #FF453A; }
+    .s-fair { width: 45%; background: #FF9F0A; }
+    .s-good { width: 70%; background: #32D74B; }
+    .s-strong { width: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+
+    .options { display: flex; flex-direction: column; gap: 20px; }
+
+    .opt-row { display: flex; align-items: center; justify-content: space-between; }
+    .opt-label { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+    .opt-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+
+    /* Toggle switch */
+    .toggle { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track { position: absolute; inset: 0; background: var(--bg-elevated); border-radius: 13px; cursor: pointer; transition: 0.3s; border: 1px solid var(--glass-border); }
+    .toggle-track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--text-tertiary); transition: 0.3s; }
+    input:checked + .toggle-track { background: var(--accent); border-color: var(--accent); }
+    input:checked + .toggle-track::after { transform: translateX(18px); background: white; }
+
+    /* Length slider */
+    .slider-row { display: flex; align-items: center; gap: 16px; }
+    .slider-val { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; min-width: 36px; text-align: right; color: var(--accent); }
+    input[type="range"] { flex: 1; -webkit-appearance: none; height: 6px; background: var(--bg-elevated); border-radius: 3px; outline: none; cursor: pointer; border: 1px solid var(--glass-border); }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.4); }
+
+    .divider { height: 1px; background: var(--glass-border); }
+
+    .copy-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text-primary); color: var(--bg-primary); padding: 12px 24px; border-radius: 40px; font-size: 14px; font-weight: 600; transition: 0.3s; z-index: 200; }
+    .copy-toast.show { transform: translateX(-50%) translateY(0); }
   </style>
-  <script>
-    const savedTheme = localStorage.getItem('anstire_theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-  </script>
 </head>
 <body>
+  <header id="site-nav"></header>
 
-  <!-- PASTE NAV HERE -->
-
-  <div class="container">
-    <div class="tool-wrapper">
-      <div class="tool-title">Pass-Gen</div>
-      
-      <label style="display:block; text-align:left; margin-bottom:8px; opacity:0.7; font-size:12px; text-transform:uppercase;">Password Length</label>
-      <input type="number" id="passLength" value="16" min="8" max="128">
-      
-      <button onclick="generatePassword()">Generate Secure Key</button>
-      
-      <div class="output-box" id="passOutput" onclick="copyPass()" title="Click to copy">
-        Awaiting Generation...
+  <main class="page-wrapper">
+    <div class="tool-layout">
+      <div class="breadcrumb anim d1">
+        <a href="/tools">Tools</a>
+        <span>/</span>
+        <span>Password Generator</span>
       </div>
-      <p style="margin-top: 15px; font-size: 12px; opacity: 0.5;">Click the password to copy it to your clipboard.</p>
-    </div>
-  </div>
 
+      <h1 class="heading-1 anim d2" style="margin-bottom: 8px;">Password <span class="gradient-text">Generator</span></h1>
+      <p class="anim d3" style="color: var(--text-secondary); font-size: 15px; margin-bottom: 40px;">Generate cryptographically strong passwords in seconds.</p>
+
+      <div class="glass-card tool-card anim d4">
+
+        <!-- Output -->
+        <div class="pass-output" id="passOutput">Click generate to start</div>
+        <div class="pass-actions">
+          <button class="btn btn-primary" onclick="generate()" style="flex:1; justify-content: center;">⟳ Generate</button>
+          <button class="btn btn-ghost" onclick="copyPass()">📋 Copy</button>
+        </div>
+
+        <!-- Strength -->
+        <div class="strength-bar">
+          <div class="strength-label">
+            <span>Strength</span>
+            <span id="strengthLabel">—</span>
+          </div>
+          <div class="strength-track">
+            <div class="strength-fill" id="strengthFill" style="width: 0;"></div>
+          </div>
+        </div>
+
+        <div class="divider" style="margin-bottom: 28px;"></div>
+
+        <!-- Options -->
+        <div class="options">
+          <div class="opt-row">
+            <div>
+              <div class="opt-label">Length</div>
+            </div>
+            <div class="slider-row" style="width: 64%;">
+              <input type="range" id="lengthSlider" min="8" max="64" value="20" oninput="onSlide(this)">
+              <span class="slider-val" id="sliderVal">20</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="opt-row">
+            <div>
+              <div class="opt-label">Uppercase Letters</div>
+              <div class="opt-sub">A – Z</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="optUpper" checked><span class="toggle-track"></span></label>
+          </div>
+
+          <div class="opt-row">
+            <div>
+              <div class="opt-label">Lowercase Letters</div>
+              <div class="opt-sub">a – z</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="optLower" checked><span class="toggle-track"></span></label>
+          </div>
+
+          <div class="opt-row">
+            <div>
+              <div class="opt-label">Numbers</div>
+              <div class="opt-sub">0 – 9</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="optNums" checked><span class="toggle-track"></span></label>
+          </div>
+
+          <div class="opt-row">
+            <div>
+              <div class="opt-label">Symbols</div>
+              <div class="opt-sub">! @ # $ % ^ & *</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="optSyms" checked><span class="toggle-track"></span></label>
+          </div>
+
+          <div class="opt-row">
+            <div>
+              <div class="opt-label">Exclude Ambiguous</div>
+              <div class="opt-sub">0, O, l, 1, I</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="optAmbi"><span class="toggle-track"></span></label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <div class="copy-toast" id="copyToast">✓ Copied to clipboard</div>
+  <div id="site-footer"></div>
+  <script src="/assets/js/global.js"></script>
   <script>
-    // PASTE THEME TOGGLE LOGIC HERE
-    
-    function generatePassword() {
-      const length = document.getElementById('passLength').value;
-      const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
-      let pass = "";
-      for (let i = 0; i < length; ++i) {
-        pass += charset.charAt(Math.floor(Math.random() * charset.length));
-      }
-      document.getElementById('passOutput').innerText = pass;
+    const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const LOWER = 'abcdefghijklmnopqrstuvwxyz';
+    const NUMS  = '0123456789';
+    const SYMS  = '!@#$%^&*()-_=+[]{}|;:,.<>?';
+    const AMBI  = '0Ol1I';
+
+    function onSlide(el) { document.getElementById('sliderVal').textContent = el.value; }
+
+    function generate() {
+      let charset = '';
+      const useUpper = document.getElementById('optUpper').checked;
+      const useLower = document.getElementById('optLower').checked;
+      const useNums  = document.getElementById('optNums').checked;
+      const useSyms  = document.getElementById('optSyms').checked;
+      const exAmbi   = document.getElementById('optAmbi').checked;
+      const length   = parseInt(document.getElementById('lengthSlider').value);
+
+      if (useUpper) charset += UPPER;
+      if (useLower) charset += LOWER;
+      if (useNums)  charset += NUMS;
+      if (useSyms)  charset += SYMS;
+      if (!charset) { alert('Select at least one character type.'); return; }
+      if (exAmbi) charset = charset.split('').filter(c => !AMBI.includes(c)).join('');
+
+      const arr = new Uint32Array(length);
+      crypto.getRandomValues(arr);
+      const pass = Array.from(arr).map(n => charset[n % charset.length]).join('');
+      document.getElementById('passOutput').textContent = pass;
+      updateStrength(pass, useUpper, useLower, useNums, useSyms);
+    }
+
+    function updateStrength(pass, u, l, n, s) {
+      const types = [u, l, n, s].filter(Boolean).length;
+      const len = pass.length;
+      let score = 0;
+      if (len >= 12) score++;
+      if (len >= 20) score++;
+      if (types >= 3) score++;
+      if (types === 4) score++;
+
+      const fill = document.getElementById('strengthFill');
+      const label = document.getElementById('strengthLabel');
+      const levels = [
+        { cls: 's-weak',   text: 'Weak' },
+        { cls: 's-fair',   text: 'Fair' },
+        { cls: 's-good',   text: 'Good' },
+        { cls: 's-strong', text: 'Strong' },
+        { cls: 's-strong', text: 'Very Strong' },
+      ];
+      const lvl = levels[Math.min(score, 4)];
+      fill.className = 'strength-fill ' + lvl.cls;
+      label.textContent = lvl.text;
+      label.style.color = score >= 3 ? 'var(--accent-2)' : score === 2 ? '#FF9F0A' : '#FF453A';
     }
 
     function copyPass() {
-      const pass = document.getElementById('passOutput').innerText;
-      if (pass !== "Awaiting Generation...") {
-        navigator.clipboard.writeText(pass);
-        document.getElementById('passOutput').innerText = "COPIED TO CLIPBOARD!";
-        setTimeout(() => document.getElementById('passOutput').innerText = pass, 1500);
-      }
+      const text = document.getElementById('passOutput').textContent;
+      if (!text || text === 'Click generate to start') return;
+      navigator.clipboard.writeText(text).then(() => {
+        const t = document.getElementById('copyToast');
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2000);
+      });
     }
+
+    // Auto-generate on load
+    document.addEventListener('DOMContentLoaded', () => setTimeout(generate, 100));
   </script>
 </body>
 </html>

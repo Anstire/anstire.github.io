@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word Counter — Anstire Tools</title>
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <style>
+    .tool-layout { max-width: 800px; margin: 0 auto; padding: calc(var(--nav-height) + 64px) 24px 88px; }
+    .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-tertiary); margin-bottom: 32px; }
+    .breadcrumb a { color: var(--accent); }
+
+    .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+    @media (max-width: 640px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 400px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+
+    .stat-pill {
+      padding: 16px 12px;
+      text-align: center;
+      border-radius: var(--radius-md);
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+    }
+    .stat-pill .val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -0.03em; background: linear-gradient(135deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: block; line-height: 1; margin-bottom: 5px; }
+    .stat-pill .lbl { font-size: 11px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    .tool-card { padding: 32px; }
+    .editor-area { position: relative; margin-bottom: 16px; }
+    .counter-textarea { min-height: 280px; font-size: 15px; line-height: 1.75; resize: vertical; }
+    .char-limit { font-size: 12px; color: var(--text-tertiary); text-align: right; margin-top: 8px; margin-bottom: 20px; }
+
+    .keyword-section { margin-top: 8px; }
+    .keyword-section h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: var(--text-primary); margin-bottom: 14px; }
+    .kw-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 40px; }
+    .kw-chip { padding: 5px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 500; background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--glass-border); display: flex; align-items: center; gap: 6px; }
+    .kw-chip .count { background: rgba(var(--accent-rgb), 0.15); color: var(--accent); padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+    .no-text { font-size: 13px; color: var(--text-tertiary); font-style: italic; }
+
+    .toolbar { display: flex; gap: 10px; justify-content: flex-end; }
+  </style>
+</head>
+<body>
+  <header id="site-nav"></header>
+  <main class="page-wrapper">
+    <div class="tool-layout">
+      <div class="breadcrumb anim d1"><a href="/tools">Tools</a> <span>/</span> <span>Word Counter</span></div>
+      <h1 class="heading-1 anim d2" style="margin-bottom: 8px;">Word <span class="gradient-text">Counter</span></h1>
+      <p class="anim d3" style="color: var(--text-secondary); font-size: 15px; margin-bottom: 32px;">Paste or type any text for instant detailed statistics.</p>
+
+      <!-- Stats -->
+      <div class="stats-row anim d4">
+        <div class="stat-pill"><span class="val" id="wc">0</span><span class="lbl">Words</span></div>
+        <div class="stat-pill"><span class="val" id="cc">0</span><span class="lbl">Chars</span></div>
+        <div class="stat-pill"><span class="val" id="sc">0</span><span class="lbl">Sentences</span></div>
+        <div class="stat-pill"><span class="val" id="pc">0</span><span class="lbl">Paragraphs</span></div>
+        <div class="stat-pill"><span class="val" id="rt">0m</span><span class="lbl">Read Time</span></div>
+      </div>
+
+      <div class="glass-card tool-card anim d5">
+        <div class="editor-area">
+          <textarea class="input counter-textarea" id="textInput" placeholder="Start typing or paste your text here…" oninput="analyze(this.value)"></textarea>
+        </div>
+        <div class="char-limit"><span id="charNoSpace">0</span> characters without spaces</div>
+        <div class="toolbar">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('textInput').value=''; analyze('');">✕ Clear</button>
+          <button class="btn btn-ghost btn-sm" onclick="copyStats()">📋 Copy Stats</button>
+        </div>
+
+        <div class="divider" style="margin: 24px 0;"></div>
+
+        <div class="keyword-section">
+          <h3>Top Keywords</h3>
+          <div class="kw-list" id="kwList"><span class="no-text">Type something to see keyword frequency…</span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="/assets/js/global.js"></script>
+  <script>
+    function analyze(text) {
+      const words = text.trim() ? text.trim().split(/\s+/).filter(w => w.length > 0) : [];
+      const sentences = text.trim() ? text.split(/[.!?]+/).filter(s => s.trim().length > 0) : [];
+      const paragraphs = text.trim() ? text.split(/\n\s*\n/).filter(p => p.trim().length > 0) : [];
+      const chars = text.length;
+      const charsNoSpace = text.replace(/\s/g, '').length;
+      const rt = Math.max(1, Math.round(words.length / 200));
+
+      document.getElementById('wc').textContent = words.length.toLocaleString();
+      document.getElementById('cc').textContent = chars.toLocaleString();
+      document.getElementById('sc').textContent = sentences.length.toLocaleString();
+      document.getElementById('pc').textContent = paragraphs.length.toLocaleString();
+      document.getElementById('rt').textContent = rt + 'm';
+      document.getElementById('charNoSpace').textContent = charsNoSpace.toLocaleString();
+
+      // Keywords
+      const stop = new Set(['the','a','an','and','or','but','in','on','at','to','for','of','with','is','it','as','be','was','are','were','that','this','by','from','have','had','not','he','she','they','we','you','i','my','your','his','her','its','our','their','can','will','do','did','so','if','up','out','then','than','also','into','about','has','been','would','could','should','there']);
+      const freq = {};
+      words.forEach(w => {
+        const clean = w.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (clean.length > 2 && !stop.has(clean)) freq[clean] = (freq[clean] || 0) + 1;
+      });
+      const top = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 12);
+      const kl = document.getElementById('kwList');
+      if (top.length === 0) { kl.innerHTML = '<span class="no-text">Type something to see keyword frequency…</span>'; return; }
+      kl.innerHTML = top.map(([w, c]) => `<div class="kw-chip">${w}<span class="count">${c}</span></div>`).join('');
+    }
+
+    function copyStats() {
+      const text = `Words: ${document.getElementById('wc').textContent}\nCharacters: ${document.getElementById('cc').textContent}\nSentences: ${document.getElementById('sc').textContent}\nParagraphs: ${document.getElementById('pc').textContent}\nRead time: ${document.getElementById('rt').textContent}`;
+      navigator.clipboard.writeText(text);
+    }
+  </script>
+</body>
+</html>

@@ -3,123 +3,145 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Anstire | Comms</title>
+  <title>Contact — Anstire</title>
+  <link rel="stylesheet" href="/assets/css/global.css">
   <style>
-    /* UNIVERSAL GLASSMORPHISM & THEME CSS */
-    :root {
-      --bg-base: #050508; --bg-gradient: radial-gradient(circle at top right, #1a1a2e 0%, #050508 100%);
-      --text-main: #f5f5f7; --text-muted: #a1a1a6;
-      --glass-bg: rgba(30, 30, 35, 0.4); --glass-border: rgba(255, 255, 255, 0.08); --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-      --accent: #00e5ff; --accent-hover: #b478ff; --input-bg: rgba(0, 0, 0, 0.3);
+    .contact-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr;
+      gap: 48px;
+      align-items: start;
+      padding: calc(var(--nav-height) + 80px) 24px 88px;
+      max-width: 1100px;
+      margin: 0 auto;
     }
-    [data-theme="light"] {
-      --bg-base: #f5f5f7; --bg-gradient: radial-gradient(circle at top right, #ffffff 0%, #e8e8ed 100%);
-      --text-main: #1d1d1f; --text-muted: #86868b;
-      --glass-bg: rgba(255, 255, 255, 0.6); --glass-border: rgba(0, 0, 0, 0.05); --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-      --accent: #0066cc; --accent-hover: #8833ff; --input-bg: rgba(255, 255, 255, 0.5);
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: var(--bg-base); background-image: var(--bg-gradient); color: var(--text-main); min-height: 100vh; overflow-x: hidden; transition: 0.4s ease; }
-    
-    /* NAV */
-    nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; z-index: 100; background: var(--glass-bg); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border); transition: 0.4s ease; }
-    .logo { font-size: 22px; font-weight: 700; color: var(--text-main); text-decoration: none; letter-spacing: 1px; font-family: 'Courier New', monospace;}
-    .nav-controls { display: flex; align-items: center; gap: 30px; }
-    .links a { color: var(--text-main); text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.3s; margin-left: 20px; text-transform: uppercase; }
-    .links a:hover { color: var(--accent); }
-    .theme-btn { background: var(--input-bg); border: 1px solid var(--glass-border); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.3s; }
-    .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+    @media (max-width: 768px) { .contact-layout { grid-template-columns: 1fr; } }
 
-    /* LAYOUT & UI */
-    .container { padding: 120px 50px 80px; max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.5fr; gap: 40px; }
-    @media (max-width: 800px) { .container { grid-template-columns: 1fr; } }
-    
-    .glass-card { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 40px; box-shadow: var(--glass-shadow); }
-    
-    h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 10px; font-family: 'Courier New', monospace; letter-spacing: -0.5px;}
-    p { font-size: 1rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 30px; }
-    
-    /* Social Links */
-    .social-link { display: flex; align-items: center; gap: 15px; padding: 15px 20px; background: var(--input-bg); border: 1px solid var(--glass-border); border-radius: 12px; text-decoration: none; color: var(--text-main); font-weight: 600; margin-bottom: 15px; transition: 0.3s; }
-    .social-link:hover { border-color: var(--accent); transform: translateX(5px); color: var(--accent); }
-    
-    /* Form Inputs */
-    .input-group { margin-bottom: 20px; }
-    label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-    input, textarea { width: 100%; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--glass-border); padding: 15px; border-radius: 12px; font-size: 15px; outline: none; transition: 0.3s; }
-    input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(0, 255, 255, 0.1); background: rgba(0, 0, 0, 0.5); }
-    
-    button { width: 100%; padding: 16px; background: var(--accent); color: #000; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;}
-    button:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 255, 255, 0.2); }
+    .contact-info h1 { margin-bottom: 16px; }
+    .contact-info p { color: var(--text-secondary); font-size: 16px; line-height: 1.75; margin-bottom: 40px; }
+
+    .info-cards { display: flex; flex-direction: column; gap: 14px; }
+    .info-card { padding: 20px 22px; display: flex; gap: 16px; align-items: flex-start; }
+    .info-card-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+    .info-card-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 4px; color: var(--text-primary); }
+    .info-card-text p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+    .info-card-text a { color: var(--accent); }
+
+    .form-card { padding: 40px; }
+    .form-card h2 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; margin-bottom: 28px; color: var(--text-primary); letter-spacing: -0.02em; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+
+    .form-success { display: none; text-align: center; padding: 40px 20px; }
+    .form-success .success-icon { font-size: 48px; margin-bottom: 16px; }
+    .form-success h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; margin-bottom: 10px; color: var(--text-primary); }
+    .form-success p { color: var(--text-secondary); font-size: 15px; }
+    .form-success.show { display: block; }
+    .form-body.hide { display: none; }
   </style>
-  <script>
-    const savedTheme = localStorage.getItem('anstire_theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-  </script>
 </head>
 <body>
+  <header id="site-nav"></header>
 
-  <nav>
-    <a href="/" class="logo">ANSTIRE</a>
-    <div class="nav-controls">
-      <div class="links">
-        <a href="/tools/">Tools</a>
-        <a href="/source-code/">Arena</a>
-        <a href="/about/">About</a>
+  <main class="page-wrapper">
+    <div class="contact-layout">
+
+      <!-- LEFT: Info -->
+      <div class="contact-info">
+        <p class="tag anim d1" style="margin-bottom: 20px;">📬 Get in Touch</p>
+        <h1 class="heading-1 anim d2">Let's <span class="gradient-text">connect.</span></h1>
+        <p class="anim d3">Whether you want to collaborate, suggest a challenge, report an issue, or just say hello — I'd love to hear from you.</p>
+
+        <div class="info-cards">
+          <div class="glass-card info-card anim d1">
+            <div class="info-card-icon">🎬</div>
+            <div class="info-card-text">
+              <h4>Collaboration</h4>
+              <p>Want to sponsor a Code Clash or feature your model? Let's talk.</p>
+            </div>
+          </div>
+          <div class="glass-card info-card anim d2">
+            <div class="info-card-icon">💡</div>
+            <div class="info-card-text">
+              <h4>Challenge Suggestions</h4>
+              <p>Have a problem you want to see AI models tackle? Send it over.</p>
+            </div>
+          </div>
+          <div class="glass-card info-card anim d3">
+            <div class="info-card-icon">⚡</div>
+            <div class="info-card-text">
+              <h4>Community</h4>
+              <p>For faster replies, join the <a href="/community">Discord</a> and ping me there.</p>
+            </div>
+          </div>
+          <div class="glass-card info-card anim d4">
+            <div class="info-card-icon">🐛</div>
+            <div class="info-card-text">
+              <h4>Bug Reports</h4>
+              <p>Found an issue with the site or a tool? I want to know.</p>
+            </div>
+          </div>
+        </div>
       </div>
-      <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">Light Mode</button>
-    </div>
-  </nav>
 
-  <div class="container">
-    <!-- Left Column: Links -->
-    <div>
-      <h1>Comms</h1>
-      <p>Looking to collaborate, request a feature, or discuss software architecture? Reach out directly.</p>
-      
-      <a href="mailto:your_email@example.com" class="social-link">
-        <span style="font-size: 20px;">✉️</span> Email
-      </a>
-      <a href="https://github.com/anstire" target="_blank" class="social-link">
-        <span style="font-size: 20px;">⌨️</span> GitHub
-      </a>
-      <a href="https://youtube.com/@anstire" target="_blank" class="social-link">
-        <span style="font-size: 20px;">🎥</span> YouTube
-      </a>
-    </div>
+      <!-- RIGHT: Form -->
+      <div class="glass-card form-card anim d2">
+        <div class="form-body">
+          <h2>Send a message</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fname">First Name</label>
+              <input type="text" id="fname" class="input" placeholder="Shubham">
+            </div>
+            <div class="form-group">
+              <label for="lname">Last Name</label>
+              <input type="text" id="lname" class="input" placeholder="Doe">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" class="input" placeholder="you@example.com">
+          </div>
+          <div class="form-group">
+            <label for="subject">Subject</label>
+            <select id="subject" class="input">
+              <option value="">Select a topic...</option>
+              <option>Collaboration</option>
+              <option>Challenge Suggestion</option>
+              <option>Bug Report</option>
+              <option>General Inquiry</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" class="input" rows="5" placeholder="What's on your mind?"></textarea>
+          </div>
+          <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="submitForm()">
+            Send Message →
+          </button>
+        </div>
 
-    <!-- Right Column: Form -->
-    <div class="glass-card">
-      <form onsubmit="event.preventDefault(); alert('Connect this form to Formspree or Netlify Forms to receive emails!');">
-        
-        <div class="input-group">
-          <label>Designation / Name</label>
-          <input type="text" placeholder="John Doe" required>
+        <div class="form-success">
+          <div class="success-icon">✅</div>
+          <h3>Message sent!</h3>
+          <p>Thanks for reaching out. I'll get back to you within 24–48 hours.</p>
         </div>
-        
-        <div class="input-group">
-          <label>Return Address</label>
-          <input type="email" placeholder="john@example.com" required>
-        </div>
-        
-        <div class="input-group">
-          <label>Message</label>
-          <textarea rows="5" placeholder="Transmit your message here..." required></textarea>
-        </div>
-        
-        <button type="submit">Establish Connection</button>
-      </form>
-    </div>
-  </div>
+      </div>
 
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="/assets/js/global.js"></script>
   <script>
-    document.getElementById('themeBtn').innerText = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
-    function toggleTheme() {
-      const current = document.documentElement.getAttribute('data-theme');
-      const next = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('anstire_theme', next);
-      document.getElementById('themeBtn').innerText = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+    function submitForm() {
+      const email = document.getElementById('email').value;
+      const message = document.getElementById('message').value;
+      if (!email || !message) { alert('Please fill in all required fields.'); return; }
+      document.querySelector('.form-body').classList.add('hide');
+      document.querySelector('.form-success').classList.add('show');
     }
   </script>
 </body>

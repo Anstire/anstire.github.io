@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Newsletter — Anstire</title>
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <style>
+    .nl-page { padding: calc(var(--nav-height) + 80px) 24px 88px; max-width: 1200px; margin: 0 auto; }
+    .nl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+    @media (max-width: 860px) { .nl-grid { grid-template-columns: 1fr; gap: 48px; } }
+
+    /* Left */
+    .nl-left h1 { margin-bottom: 18px; }
+    .nl-left .lead { font-size: 17px; color: var(--text-secondary); line-height: 1.75; margin-bottom: 40px; }
+
+    .what-you-get { display: flex; flex-direction: column; gap: 20px; margin-bottom: 48px; }
+    .wyg-item { display: flex; gap: 16px; align-items: flex-start; }
+    .wyg-icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; background: linear-gradient(135deg, rgba(var(--accent-rgb),0.14), rgba(var(--accent-2-rgb),0.1)); border: 1px solid rgba(var(--accent-rgb),0.18); }
+    .wyg-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: var(--text-primary); margin-bottom: 4px; }
+    .wyg-text p { font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; }
+
+    .nl-proof { display: flex; align-items: center; gap: 12px; }
+    .proof-avatars { display: flex; }
+    .proof-avatar { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--bg-primary); margin-left: -8px; display: flex; align-items: center; justify-content: center; font-size: 16px; background: var(--bg-elevated); }
+    .proof-avatar:first-child { margin-left: 0; }
+    .proof-text { font-size: 13px; color: var(--text-secondary); }
+    .proof-text strong { color: var(--text-primary); }
+
+    /* Right: Form Card */
+    .nl-form-card { padding: 44px; position: sticky; top: calc(var(--nav-height) + 24px); }
+    .nl-form-card h2 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -0.025em; margin-bottom: 8px; color: var(--text-primary); }
+    .nl-form-card .sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 28px; }
+
+    .plan-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+    .plan-opt { padding: 14px; border-radius: var(--radius-md); border: 2px solid var(--glass-border); cursor: pointer; transition: var(--transition); }
+    .plan-opt.selected { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.07); }
+    .plan-opt h4 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+    .plan-opt p { font-size: 12px; color: var(--text-tertiary); }
+    .plan-freq { font-size: 11px; font-weight: 600; color: var(--accent); margin-top: 4px; }
+
+    .success-state { display: none; text-align: center; padding: 20px 0; }
+    .success-state .s-icon { font-size: 56px; margin-bottom: 16px; }
+    .success-state h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; margin-bottom: 10px; color: var(--text-primary); }
+    .success-state p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+    .success-state.show { display: block; }
+    .form-content.hide { display: none; }
+
+    .freq-note { font-size: 12px; color: var(--text-tertiary); text-align: center; margin-top: 14px; }
+
+    /* Archives */
+    .archive-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; }
+    @media (max-width: 768px) { .archive-grid { grid-template-columns: 1fr; } }
+    .archive-card { padding: 20px 22px; }
+    .archive-card .issue-num { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .archive-card h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: var(--text-primary); margin-bottom: 6px; }
+    .archive-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <header id="site-nav"></header>
+
+  <main class="page-wrapper">
+    <div class="nl-page">
+      <div class="nl-grid">
+
+        <!-- LEFT -->
+        <div class="nl-left">
+          <p class="tag anim d1" style="margin-bottom: 20px;">📬 The Lab Letter</p>
+          <h1 class="heading-1 anim d2">Stay ahead of <span class="gradient-text">every clash.</span></h1>
+          <p class="lead anim d3">Get clash results, AI performance breakdowns, new tools, and deep-dive articles — delivered directly to your inbox. No spam. Ever.</p>
+
+          <div class="what-you-get">
+            <div class="wyg-item anim d1">
+              <div class="wyg-icon">⚔️</div>
+              <div class="wyg-text">
+                <h4>Clash Results First</h4>
+                <p>Be the first to know which model performed best in the latest Code Clash — before the video drops.</p>
+              </div>
+            </div>
+            <div class="wyg-item anim d2">
+              <div class="wyg-icon">🔬</div>
+              <div class="wyg-text">
+                <h4>Technical Deep Dives</h4>
+                <p>Exclusive analysis that doesn't make it into the videos — algorithm dissections, prompt engineering notes, and model quirks.</p>
+              </div>
+            </div>
+            <div class="wyg-item anim d3">
+              <div class="wyg-icon">🛠️</div>
+              <div class="wyg-text">
+                <h4>New Tool Alerts</h4>
+                <p>Every new developer tool added to the site, with a quick demo and tips on how to use it.</p>
+              </div>
+            </div>
+            <div class="wyg-item anim d4">
+              <div class="wyg-icon">📐</div>
+              <div class="wyg-text">
+                <h4>Code &amp; Math Gems</h4>
+                <p>One beautiful algorithm, equation, or programming pattern per issue — because elegance is worth sharing.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="nl-proof anim d5">
+            <div class="proof-avatars">
+              <div class="proof-avatar">👨‍💻</div>
+              <div class="proof-avatar">👩‍💻</div>
+              <div class="proof-avatar">🧑‍💻</div>
+              <div class="proof-avatar">👨‍🔬</div>
+            </div>
+            <div class="proof-text">Join <strong>developers, students, and AI enthusiasts</strong> already subscribed.</div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Form -->
+        <div class="glass-card nl-form-card anim d3">
+          <div class="form-content">
+            <h2>Subscribe free</h2>
+            <p class="sub">Choose your cadence, enter your email, done.</p>
+
+            <div class="plan-row">
+              <div class="plan-opt selected" onclick="selectPlan(this, 'weekly')">
+                <h4>Weekly</h4>
+                <p>Every clash, every week</p>
+                <div class="plan-freq">Recommended</div>
+              </div>
+              <div class="plan-opt" onclick="selectPlan(this, 'biweekly')">
+                <h4>Bi-Weekly</h4>
+                <p>Best-of-two-weeks digest</p>
+                <div class="plan-freq" style="color: var(--text-tertiary);">Lighter inbox</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="nl-name">Your Name</label>
+              <input type="text" id="nl-name" class="input" placeholder="Shubham">
+            </div>
+            <div class="form-group">
+              <label for="nl-email">Email Address</label>
+              <input type="email" id="nl-email" class="input" placeholder="you@example.com">
+            </div>
+
+            <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top: 4px;" onclick="subscribe()">
+              Subscribe to the Lab Letter →
+            </button>
+            <p class="freq-note">Free forever. Unsubscribe any time. No ads.</p>
+          </div>
+
+          <div class="success-state">
+            <div class="s-icon">🎉</div>
+            <h3>You're in the lab!</h3>
+            <p>Welcome to the Anstire Lab Letter. Your first issue arrives on the next clash day. Check your inbox to confirm your email.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Archive -->
+      <section class="section" style="padding-left: 0; padding-right: 0; padding-top: 80px;">
+        <p class="label-tag anim d1">Past Issues</p>
+        <h2 class="heading-2 anim d2" style="margin-top: 10px; margin-bottom: 6px;">Archive</h2>
+        <p class="anim d3" style="color: var(--text-secondary); font-size: 14px; margin-bottom: 0;">Sample issues — content coming as the channel grows.</p>
+
+        <div class="archive-grid">
+          <div class="glass-card archive-card anim d1">
+            <div class="issue-num">Issue #003 · Placeholder</div>
+            <h4>The DP Clash: Three Models, One Knapsack</h4>
+            <p>Full breakdown of the dynamic programming clash — time complexities, code elegance scores, and community reaction.</p>
+          </div>
+          <div class="glass-card archive-card anim d2">
+            <div class="issue-num">Issue #002 · Placeholder</div>
+            <h4>UI Clash Results + Glassmorphism Deep Dive</h4>
+            <p>Which model generated the cleanest React component? Plus: a guide to implementing glassmorphism without killing performance.</p>
+          </div>
+          <div class="glass-card archive-card anim d3">
+            <div class="issue-num">Issue #001 · Placeholder</div>
+            <h4>Welcome to the Lab Letter</h4>
+            <p>The first issue — what Anstire is, what Code Clashes are, and what to expect from this newsletter every week.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="/assets/js/global.js"></script>
+  <script>
+    let selectedPlan = 'weekly';
+    function selectPlan(el, plan) {
+      selectedPlan = plan;
+      document.querySelectorAll('.plan-opt').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+    function subscribe() {
+      const email = document.getElementById('nl-email').value;
+      if (!email || !email.includes('@')) { alert('Please enter a valid email address.'); return; }
+      document.querySelector('.form-content').classList.add('hide');
+      document.querySelector('.success-state').classList.add('show');
+    }
+  </script>
+</body>
+</html>

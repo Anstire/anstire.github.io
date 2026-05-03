@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Date Difference — Anstire Tools</title>
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <style>
+    .tool-layout { max-width: 700px; margin: 0 auto; padding: calc(var(--nav-height) + 64px) 24px 88px; }
+    .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-tertiary); margin-bottom: 32px; }
+    .breadcrumb a { color: var(--accent); }
+
+    .date-card { padding: 40px; }
+    .date-inputs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: end; margin-bottom: 32px; }
+    @media (max-width: 540px) { .date-inputs { grid-template-columns: 1fr; } }
+    .arrow { font-size: 22px; color: var(--text-tertiary); text-align: center; padding-bottom: 10px; }
+
+    .result-block {
+      background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.08), rgba(var(--accent-2-rgb), 0.06));
+      border: 1px solid rgba(var(--accent-rgb), 0.2);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin-bottom: 24px;
+      text-align: center;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .result-main { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(32px, 8vw, 64px); letter-spacing: -0.04em; background: linear-gradient(135deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
+    .result-unit { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-top: 6px; }
+    .result-empty { color: var(--text-tertiary); font-size: 15px; }
+
+    .breakdown-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    @media (max-width: 480px) { .breakdown-grid { grid-template-columns: repeat(2, 1fr); } }
+    .breakdown-item { padding: 16px 10px; text-align: center; border-radius: var(--radius-md); background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); }
+    .bd-val { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 24px; color: var(--text-primary); letter-spacing: -0.02em; display: block; }
+    .bd-lbl { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; }
+
+    .quick-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; }
+    .quick-btn { padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid var(--glass-border); background: var(--glass-bg); color: var(--text-secondary); cursor: pointer; transition: var(--transition); }
+    .quick-btn:hover { color: var(--accent); border-color: rgba(var(--accent-rgb),0.4); background: rgba(var(--accent-rgb),0.07); }
+
+    .divider { height: 1px; background: var(--glass-border); margin: 24px 0; }
+  </style>
+</head>
+<body>
+  <header id="site-nav"></header>
+  <main class="page-wrapper">
+    <div class="tool-layout">
+      <div class="breadcrumb anim d1"><a href="/tools">Tools</a> <span>/</span> <span>Date Difference</span></div>
+      <h1 class="heading-1 anim d2" style="margin-bottom: 8px;">Date <span class="gradient-text">Difference</span></h1>
+      <p class="anim d3" style="color: var(--text-secondary); font-size: 15px; margin-bottom: 32px;">Calculate the exact gap between any two dates.</p>
+
+      <div class="glass-card date-card anim d4">
+        <div class="date-inputs">
+          <div class="form-group" style="margin: 0;">
+            <label for="d1">Start Date</label>
+            <input type="date" id="d1" class="input" oninput="calc()">
+          </div>
+          <div class="arrow">→</div>
+          <div class="form-group" style="margin: 0;">
+            <label for="d2">End Date</label>
+            <input type="date" id="d2" class="input" oninput="calc()">
+          </div>
+        </div>
+
+        <div class="result-block">
+          <div id="resultDisplay">
+            <div class="result-empty">Select two dates above</div>
+          </div>
+        </div>
+
+        <div class="breakdown-grid" id="breakdown">
+          <div class="breakdown-item"><span class="bd-val" id="bdYears">—</span><span class="bd-lbl">Years</span></div>
+          <div class="breakdown-item"><span class="bd-val" id="bdMonths">—</span><span class="bd-lbl">Months</span></div>
+          <div class="breakdown-item"><span class="bd-val" id="bdWeeks">—</span><span class="bd-lbl">Weeks</span></div>
+          <div class="breakdown-item"><span class="bd-val" id="bdDays">—</span><span class="bd-lbl">Days</span></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div style="margin-bottom: 16px;">
+          <p style="font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 12px;">Quick presets</p>
+          <div class="quick-row">
+            <button class="quick-btn" onclick="setPreset(0, 0, 0)">Today → Today</button>
+            <button class="quick-btn" onclick="setPreset(-30, 0)">Last 30 days</button>
+            <button class="quick-btn" onclick="setPreset(-365, 0)">Last year</button>
+            <button class="quick-btn" onclick="setPreset(0, 30)">Next 30 days</button>
+            <button class="quick-btn" onclick="setPreset(-7, 0)">Last week</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="/assets/js/global.js"></script>
+  <script>
+    // Set default dates
+    window.addEventListener('DOMContentLoaded', () => {
+      const today = new Date();
+      const fmt = d => d.toISOString().split('T')[0];
+      const past = new Date(today); past.setFullYear(past.getFullYear() - 1);
+      document.getElementById('d1').value = fmt(past);
+      document.getElementById('d2').value = fmt(today);
+      setTimeout(calc, 120);
+    });
+
+    function calc() {
+      const v1 = document.getElementById('d1').value;
+      const v2 = document.getElementById('d2').value;
+      if (!v1 || !v2) return;
+      const a = new Date(v1), b = new Date(v2);
+      const diff = Math.abs(b - a);
+      const totalDays = Math.round(diff / (1000 * 60 * 60 * 24));
+      const weeks = Math.floor(totalDays / 7);
+
+      // Years/months breakdown
+      let [start, end] = a < b ? [a, b] : [b, a];
+      let y = end.getFullYear() - start.getFullYear();
+      let m = end.getMonth() - start.getMonth();
+      if (m < 0) { y--; m += 12; }
+      let d = end.getDate() - start.getDate();
+      if (d < 0) { m--; const prev = new Date(end.getFullYear(), end.getMonth(), 0); d += prev.getDate(); if (m < 0) { y--; m += 12; } }
+      const totalMonths = y * 12 + m;
+
+      const rd = document.getElementById('resultDisplay');
+      if (totalDays === 0) {
+        rd.innerHTML = '<div class="result-main">0</div><div class="result-unit">same day</div>';
+      } else {
+        const dir = b >= a ? 'apart' : 'ago';
+        rd.innerHTML = `<div><div class="result-main">${totalDays.toLocaleString()}</div><div class="result-unit">days ${dir}</div></div>`;
+      }
+      document.getElementById('bdYears').textContent = y;
+      document.getElementById('bdMonths').textContent = totalMonths;
+      document.getElementById('bdWeeks').textContent = weeks.toLocaleString();
+      document.getElementById('bdDays').textContent = totalDays.toLocaleString();
+    }
+
+    function setPreset(startOffset, endOffset) {
+      const fmt = d => d.toISOString().split('T')[0];
+      const today = new Date();
+      const s = new Date(today); s.setDate(s.getDate() + startOffset);
+      const e = new Date(today); e.setDate(e.getDate() + endOffset);
+      document.getElementById('d1').value = fmt(startOffset <= 0 ? s : today);
+      document.getElementById('d2').value = fmt(endOffset > 0 ? e : today);
+      calc();
+    }
+  </script>
+</body>
+</html>

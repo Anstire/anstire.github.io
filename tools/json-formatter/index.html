@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSON Formatter — Anstire Tools</title>
+  <link rel="stylesheet" href="/assets/css/global.css">
+  <style>
+    .tool-layout { max-width: 1000px; margin: 0 auto; padding: calc(var(--nav-height) + 64px) 24px 88px; }
+    .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-tertiary); margin-bottom: 32px; }
+    .breadcrumb a { color: var(--accent); }
+
+    .editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 768px) { .editor-grid { grid-template-columns: 1fr; } }
+
+    .panel { padding: 0; overflow: hidden; }
+    .panel-header { padding: 16px 22px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; }
+    .panel-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+    .panel-actions { display: flex; gap: 8px; }
+    .panel-btn { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid var(--glass-border); background: var(--bg-elevated); color: var(--text-secondary); cursor: pointer; transition: var(--transition); }
+    .panel-btn:hover { color: var(--accent); border-color: rgba(var(--accent-rgb), 0.4); }
+    .panel-body { padding: 0; }
+
+    .json-input { min-height: 420px; border-radius: 0; border: none; resize: none; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; line-height: 1.8; background: var(--bg-elevated); padding: 20px; }
+    .json-input:focus { box-shadow: none; border: none; outline: none; }
+
+    .json-output { min-height: 420px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; line-height: 1.8; padding: 20px; overflow: auto; background: var(--bg-elevated); color: var(--text-secondary); }
+    .json-output .j-key { color: var(--accent); }
+    .json-output .j-str { color: var(--accent-2); }
+    .json-output .j-num { color: #E6B95C; }
+    .json-output .j-bool { color: #FF9F0A; }
+    .json-output .j-null { color: #FF453A; }
+    .json-output .j-punc { color: var(--text-tertiary); }
+
+    /* Status bar */
+    .status-bar { display: flex; align-items: center; gap: 14px; padding: 10px 22px; border-top: 1px solid var(--glass-border); font-size: 12px; background: var(--bg-elevated); flex-wrap: wrap; }
+    .status-ok { color: #32D74B; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+    .status-err { color: #FF453A; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+    .status-info { color: var(--text-tertiary); }
+
+    /* Control bar */
+    .control-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .indent-toggle { display: flex; border: 1px solid var(--glass-border); border-radius: 20px; overflow: hidden; background: var(--bg-elevated); }
+    .indent-opt { padding: 6px 14px; font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: var(--transition); border: none; background: none; font-family: inherit; }
+    .indent-opt.active { background: rgba(var(--accent-rgb), 0.12); color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header id="site-nav"></header>
+  <main class="page-wrapper">
+    <div class="tool-layout">
+      <div class="breadcrumb anim d1"><a href="/tools">Tools</a> <span>/</span> <span>JSON Formatter</span></div>
+      <h1 class="heading-1 anim d2" style="margin-bottom: 8px;"><span class="gradient-text">JSON</span> Formatter</h1>
+      <p class="anim d3" style="color: var(--text-secondary); font-size: 15px; margin-bottom: 24px;">Beautify, minify, and validate JSON with syntax highlighting.</p>
+
+      <!-- Controls -->
+      <div class="control-bar anim d4">
+        <span style="font-size: 13px; color: var(--text-secondary); font-weight: 500;">Indent:</span>
+        <div class="indent-toggle">
+          <button class="indent-opt active" onclick="setIndent(2, this)">2 spaces</button>
+          <button class="indent-opt" onclick="setIndent(4, this)">4 spaces</button>
+          <button class="indent-opt" onclick="setIndent('tab', this)">Tab</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="sortKeys()">⬆ Sort Keys</button>
+        <button class="btn btn-ghost btn-sm" onclick="minify()">⟨⟩ Minify</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadSample()">Load Sample</button>
+      </div>
+
+      <div class="editor-grid anim d5">
+        <!-- Input panel -->
+        <div class="glass-card panel">
+          <div class="panel-header">
+            <div class="panel-title">📥 Input</div>
+            <div class="panel-actions">
+              <button class="panel-btn" onclick="document.getElementById('jsonIn').value=''; format();">Clear</button>
+              <button class="panel-btn" onclick="pasteClip()">Paste</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <textarea id="jsonIn" class="input json-input" placeholder='Paste your JSON here…&#10;&#10;{"name":"Anstire","type":"lab"}' oninput="format()"></textarea>
+          </div>
+          <div class="status-bar">
+            <span id="statusLabel"><span class="status-info">Waiting for input…</span></span>
+            <span class="status-info" id="statsLabel"></span>
+          </div>
+        </div>
+
+        <!-- Output panel -->
+        <div class="glass-card panel">
+          <div class="panel-header">
+            <div class="panel-title">✨ Formatted</div>
+            <div class="panel-actions">
+              <button class="panel-btn" onclick="copyOutput()">Copy</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div id="jsonOut" class="json-output">Output will appear here…</div>
+          </div>
+          <div class="status-bar">
+            <span class="status-info" id="sizeLabel">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="/assets/js/global.js"></script>
+  <script>
+    let indent = 2;
+
+    function setIndent(val, btn) {
+      indent = val === 'tab' ? '\t' : val;
+      document.querySelectorAll('.indent-opt').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      format();
+    }
+
+    function format() {
+      const raw = document.getElementById('jsonIn').value.trim();
+      const out = document.getElementById('jsonOut');
+      const status = document.getElementById('statusLabel');
+      const stats = document.getElementById('statsLabel');
+      const size = document.getElementById('sizeLabel');
+
+      if (!raw) {
+        out.innerHTML = 'Output will appear here…';
+        status.innerHTML = '<span class="status-info">Waiting for input…</span>';
+        stats.textContent = '';
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        const pretty = JSON.stringify(parsed, null, indent);
+        out.innerHTML = highlight(pretty);
+        status.innerHTML = '<span class="status-ok">✓ Valid JSON</span>';
+        const keys = countKeys(parsed);
+        stats.textContent = `${keys} keys · depth ${getDepth(parsed)}`;
+        const bytes = new Blob([pretty]).size;
+        size.textContent = bytes < 1024 ? `${bytes} B` : `${(bytes/1024).toFixed(1)} KB`;
+      } catch (e) {
+        out.textContent = raw;
+        status.innerHTML = `<span class="status-err">✕ ${e.message}</span>`;
+        stats.textContent = '';
+        size.textContent = '—';
+      }
+    }
+
+    function highlight(str) {
+      return str
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"(.*?)"(?=\s*:)/g, '<span class="j-key">"$1"</span>')
+        .replace(/:\s*"(.*?)"/g, (m, s) => `: <span class="j-str">"${s}"</span>`)
+        .replace(/:\s*(\-?\d+\.?\d*(?:[eE][+-]?\d+)?)/g, ': <span class="j-num">$1</span>')
+        .replace(/:\s*(true|false)/g, ': <span class="j-bool">$1</span>')
+        .replace(/:\s*(null)/g, ': <span class="j-null">$1</span>')
+        .replace(/([{}\[\],])/g, '<span class="j-punc">$1</span>');
+    }
+
+    function countKeys(obj, count = 0) {
+      if (typeof obj === 'object' && obj !== null) {
+        for (const k in obj) { count++; count = countKeys(obj[k], count); }
+      }
+      return count;
+    }
+
+    function getDepth(obj, d = 0) {
+      if (typeof obj !== 'object' || obj === null) return d;
+      return Math.max(...Object.values(obj).map(v => getDepth(v, d + 1)), d);
+    }
+
+    function sortKeys() {
+      const raw = document.getElementById('jsonIn').value.trim();
+      try {
+        const sorted = sortObjKeys(JSON.parse(raw));
+        document.getElementById('jsonIn').value = JSON.stringify(sorted, null, indent);
+        format();
+      } catch {}
+    }
+
+    function sortObjKeys(obj) {
+      if (Array.isArray(obj)) return obj.map(sortObjKeys);
+      if (typeof obj === 'object' && obj !== null) {
+        return Object.fromEntries(Object.entries(obj).sort().map(([k, v]) => [k, sortObjKeys(v)]));
+      }
+      return obj;
+    }
+
+    function minify() {
+      const raw = document.getElementById('jsonIn').value.trim();
+      try {
+        document.getElementById('jsonIn').value = JSON.stringify(JSON.parse(raw));
+        format();
+      } catch {}
+    }
+
+    function copyOutput() {
+      const text = document.getElementById('jsonOut').innerText;
+      navigator.clipboard.writeText(text);
+    }
+
+    async function pasteClip() {
+      try {
+        const t = await navigator.clipboard.readText();
+        document.getElementById('jsonIn').value = t;
+        format();
+      } catch {}
+    }
+
+    function loadSample() {
+      document.getElementById('jsonIn').value = JSON.stringify({
+        "channel": "Anstire",
+        "type": "digital-laboratory",
+        "mission": "Code. Compare. Conquer.",
+        "clashes": [
+          { "id": 1, "topic": "Sorting Algorithms", "models": ["gpt-4o", "claude-3.5", "gemini-1.5"], "judgedBy": "community" },
+          { "id": 2, "topic": "UI Generation", "models": ["gpt-4o", "gemini-1.5"], "judgedBy": "community" }
+        ],
+        "stats": { "totalClashes": 12, "modelsTestered": 6, "communityVotes": 4821 }
+      });
+      format();
+    }
+  </script>
+</body>
+</html>

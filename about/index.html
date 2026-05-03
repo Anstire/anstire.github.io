@@ -3,112 +3,211 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Anstire | About</title>
+  <title>About — Anstire</title>
+  <meta name="description" content="The mission, methodology, and mind behind Anstire — the AI Code Clash laboratory.">
+  <link rel="stylesheet" href="/assets/css/global.css">
   <style>
-    /* UNIVERSAL GLASSMORPHISM & THEME CSS */
-    :root {
-      --bg-base: #050508; --bg-gradient: radial-gradient(circle at top right, #1a1a2e 0%, #050508 100%);
-      --text-main: #f5f5f7; --text-muted: #a1a1a6;
-      --glass-bg: rgba(30, 30, 35, 0.4); --glass-border: rgba(255, 255, 255, 0.08); --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-      --accent: #00e5ff; --accent-hover: #b478ff; --input-bg: rgba(0, 0, 0, 0.3);
-    }
-    [data-theme="light"] {
-      --bg-base: #f5f5f7; --bg-gradient: radial-gradient(circle at top right, #ffffff 0%, #e8e8ed 100%);
-      --text-main: #1d1d1f; --text-muted: #86868b;
-      --glass-bg: rgba(255, 255, 255, 0.6); --glass-border: rgba(0, 0, 0, 0.05); --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-      --accent: #0066cc; --accent-hover: #8833ff; --input-bg: rgba(255, 255, 255, 0.5);
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: var(--bg-base); background-image: var(--bg-gradient); color: var(--text-main); min-height: 100vh; overflow-x: hidden; transition: 0.4s ease; }
-    
-    /* NAV */
-    nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; z-index: 100; background: var(--glass-bg); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border); transition: 0.4s ease; }
-    .logo { font-size: 22px; font-weight: 700; color: var(--text-main); text-decoration: none; letter-spacing: 1px; font-family: 'Courier New', monospace; }
-    .nav-controls { display: flex; align-items: center; gap: 30px; }
-    .links a { color: var(--text-main); text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.3s; margin-left: 20px; text-transform: uppercase; }
-    .links a:hover { color: var(--accent); }
-    .theme-btn { background: var(--input-bg); border: 1px solid var(--glass-border); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.3s; }
-    .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .about-hero { padding: calc(var(--nav-height) + 80px) 24px 80px; max-width: 1200px; margin: 0 auto; }
+    .about-hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    @media (max-width: 768px) { .about-hero-grid { grid-template-columns: 1fr; gap: 40px; } }
 
-    /* LAYOUT & UI */
-    .container { padding: 120px 50px 80px; max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-    @media (max-width: 800px) { .container { grid-template-columns: 1fr; } }
-    
-    .glass-card { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 24px; padding: 40px; box-shadow: var(--glass-shadow); }
-    
-    h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 20px; letter-spacing: -0.5px; font-family: 'Courier New', monospace; }
-    h2 { font-size: 1.2rem; color: var(--accent); margin-bottom: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-    p { font-size: 1rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 20px; }
-    
-    .status-indicator { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 6px 12px; background: rgba(0, 255, 128, 0.1); color: #00ff80; border-radius: 20px; border: 1px solid rgba(0, 255, 128, 0.3); margin-bottom: 30px; }
-    .dot { width: 8px; height: 8px; background: #00ff80; border-radius: 50%; box-shadow: 0 0 8px #00ff80; animation: pulse 2s infinite; }
-    
-    .tag-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; }
-    .tag { padding: 8px 16px; background: var(--input-bg); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 13px; font-weight: 500; border-radius: 8px; transition: 0.2s; cursor: default; }
-    .tag:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+    .hero-text .eyebrow { margin-bottom: 20px; }
+    .hero-text h1 { margin-bottom: 24px; }
+    .hero-text p { font-size: 17px; color: var(--text-secondary); line-height: 1.75; margin-bottom: 16px; }
 
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    .hero-visual {
+      aspect-ratio: 1;
+      max-width: 420px;
+      margin-left: auto;
+      border-radius: var(--radius-xl);
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .terminal-header { display: flex; gap: 8px; margin-bottom: 24px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #FF5F57; } .dot-y { background: #FFBD2E; } .dot-g { background: #28CA41; }
+    .terminal-body { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; line-height: 1.9; color: var(--text-secondary); flex: 1; }
+    .t-comment { color: var(--text-tertiary); }
+    .t-keyword { color: var(--accent); }
+    .t-string { color: var(--accent-2); }
+    .t-fn { color: #E6B95C; }
+    .t-cursor { display: inline-block; width: 8px; height: 14px; background: var(--accent); animation: blink 1.2s step-end infinite; vertical-align: middle; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* Mission Grid */
+    .mission-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 48px; }
+    @media (max-width: 768px) { .mission-grid { grid-template-columns: 1fr; } }
+
+    .mission-card { padding: 32px; }
+    .mission-icon { font-size: 32px; margin-bottom: 16px; }
+    .mission-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 12px; color: var(--text-primary); }
+    .mission-text { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+
+    /* How it works */
+    .steps { display: flex; flex-direction: column; gap: 0; margin-top: 48px; }
+    .step { display: grid; grid-template-columns: 60px 1fr; gap: 24px; padding: 32px 0; border-bottom: 1px solid var(--glass-border); }
+    .step:last-child { border-bottom: none; }
+    .step-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 40px; background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-top: 4px; }
+    .step-content h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; margin-bottom: 10px; color: var(--text-primary); }
+    .step-content p { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
+
+    /* Models */
+    .models-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; }
+    @media (max-width: 768px) { .models-grid { grid-template-columns: repeat(2, 1fr); } }
+    .model-card { padding: 24px; text-align: center; }
+    .model-logo { font-size: 36px; margin-bottom: 12px; }
+    .model-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 6px; color: var(--text-primary); }
+    .model-sub { font-size: 12px; color: var(--text-tertiary); }
+    .model-wins { margin-top: 12px; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(var(--accent-rgb), 0.1); color: var(--accent); border: 1px solid rgba(var(--accent-rgb), 0.2); }
   </style>
-  <script>
-    const savedTheme = localStorage.getItem('anstire_theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-  </script>
 </head>
 <body>
+  <header id="site-nav"></header>
 
-  <nav>
-    <a href="/" class="logo">ANSTIRE</a>
-    <div class="nav-controls">
-      <div class="links">
-        <a href="/tools/">Tools</a>
-        <a href="/source-code/">Arena</a>
-        <a href="/contact/">Comms</a>
-      </div>
-      <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">Light Mode</button>
-    </div>
-  </nav>
+  <main class="page-wrapper">
 
-  <div class="container">
-    <!-- Left Column: Identity -->
-    <div class="glass-card">
-      <div class="status-indicator">
-        <div class="dot"></div> System Online | Patna, IN
-      </div>
-      <h1>Shubham Ranjan</h1>
-      <p>I am a student, developer, and aspiring entrepreneur. I specialize in building custom software architecture, mathematical render engines, and algorithm analysis.</p>
-      <p>My goal is to design scalable tech solutions, deploy high-utility applications to the Google Play Store, and push the limits of local AI models.</p>
-    </div>
-
-    <!-- Right Column: Tech & Focus -->
-    <div class="glass-card">
-      <h2>Tech Stack</h2>
-      <div class="tag-grid">
-        <div class="tag">JavaScript (ES6+)</div>
-        <div class="tag">Python</div>
-        <div class="tag">React Native</div>
-        <div class="tag">HTML5 Canvas</div>
-        <div class="tag">p5.js</div>
-        <div class="tag">CCapture.js</div>
-      </div>
-
-      <h2>Current Focus</h2>
-      <div class="tag-grid">
-        <div class="tag" style="border-color: var(--accent-hover); color: var(--accent-hover);">Local LLM Deployment (GGUF)</div>
-        <div class="tag" style="border-color: var(--accent-hover); color: var(--accent-hover);">Formula Engine Architecture</div>
-        <div class="tag" style="border-color: var(--accent-hover); color: var(--accent-hover);">Physics Simulations</div>
+    <!-- HERO -->
+    <div class="about-hero">
+      <div class="about-hero-grid">
+        <div class="hero-text">
+          <p class="tag eyebrow anim d1">⚗️ The Laboratory</p>
+          <h1 class="heading-1 anim d2">Where AI meets its <span class="gradient-text">true test.</span></h1>
+          <p class="anim d3">Anstire is a digital laboratory dedicated to the intersection of clean code, mathematical beauty, and the evolving frontier of artificial intelligence.</p>
+          <p class="anim d4">We don't take AI capabilities at face value. We test, benchmark, and document — so you can see exactly which models truly possess the <em>aura</em> of an elite developer.</p>
+        </div>
+        <div class="glass-card hero-visual anim d3">
+          <div class="terminal-header">
+            <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+          </div>
+          <div class="terminal-body">
+            <div><span class="t-comment">// anstire.benchmark.ts</span></div>
+            <div>&nbsp;</div>
+            <div><span class="t-keyword">import</span> { Clash } <span class="t-keyword">from</span> <span class="t-string">'@anstire/core'</span>;</div>
+            <div>&nbsp;</div>
+            <div><span class="t-keyword">const</span> clash = <span class="t-keyword">new</span> <span class="t-fn">Clash</span>({</div>
+            <div>&nbsp;&nbsp;models: [<span class="t-string">'gpt-4o'</span>, <span class="t-string">'claude-3.5'</span>],</div>
+            <div>&nbsp;&nbsp;challenge: <span class="t-string">'dynamic-programming'</span>,</div>
+            <div>&nbsp;&nbsp;metric: <span class="t-string">'time + elegance'</span>,</div>
+            <div>});</div>
+            <div>&nbsp;</div>
+            <div><span class="t-keyword">await</span> clash.<span class="t-fn">run</span>();<span class="t-cursor"></span></div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script>
-    document.getElementById('themeBtn').innerText = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
-    function toggleTheme() {
-      const current = document.documentElement.getAttribute('data-theme');
-      const next = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('anstire_theme', next);
-      document.getElementById('themeBtn').innerText = next === 'dark' ? 'Light Mode' : 'Dark Mode';
-    }
-  </script>
+    <!-- MISSION -->
+    <section class="section" style="padding-top: 0;">
+      <p class="label-tag anim d1">Our Purpose</p>
+      <h2 class="heading-1 anim d2" style="margin-top: 10px; margin-bottom: 8px;">The Mission</h2>
+      <p class="anim d3" style="color: var(--text-secondary); font-size: 16px; max-width: 520px;">Three core principles drive every Code Clash.</p>
+
+      <div class="mission-grid">
+        <div class="glass-card mission-card anim d1">
+          <div class="mission-icon">🧪</div>
+          <div class="mission-title">Rigorous Testing</div>
+          <p class="mission-text">Every challenge is designed to expose real capabilities. No cherry-picking. No easy prompts. We probe logic, efficiency, and creative problem-solving under pressure.</p>
+        </div>
+        <div class="glass-card mission-card anim d2">
+          <div class="mission-icon">📐</div>
+          <div class="mission-title">Mathematical Beauty</div>
+          <p class="mission-text">We believe the best code is elegant. Efficiency and aesthetics aren't opposites — they're the same thing viewed from different angles. We reward both.</p>
+        </div>
+        <div class="glass-card mission-card anim d3">
+          <div class="mission-icon">🔍</div>
+          <div class="mission-title">Radical Transparency</div>
+          <p class="mission-text">Every source code snippet, every prompt, every result is documented and open. You can reproduce every clash yourself. Nothing is hidden.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="section" style="padding-top: 0;">
+      <p class="label-tag anim d1">Methodology</p>
+      <h2 class="heading-1 anim d2" style="margin-top: 10px;">How Code Clashes Work</h2>
+
+      <div class="steps">
+        <div class="step anim d1">
+          <div class="step-num">01</div>
+          <div class="step-content">
+            <h3>Challenge Design</h3>
+            <p>Each clash begins with a carefully crafted problem spanning sorting, UI generation, mathematical computation, system design, or algorithmic optimization. Problems are graded for difficulty and scope.</p>
+          </div>
+        </div>
+        <div class="step anim d2">
+          <div class="step-num">02</div>
+          <div class="step-content">
+            <h3>Identical Prompts</h3>
+            <p>Every model receives the exact same prompt — no special tuning, no model-specific wording. A fair field is the only field worth competing on.</p>
+          </div>
+        </div>
+        <div class="step anim d3">
+          <div class="step-num">03</div>
+          <div class="step-content">
+            <h3>Evaluation</h3>
+            <p>Results are judged on correctness, time complexity, code elegance, edge-case handling, and readability. Each dimension is scored independently.</p>
+          </div>
+        </div>
+        <div class="step anim d4">
+          <div class="step-num">04</div>
+          <div class="step-content">
+            <h3>Publication</h3>
+            <p>The full video, source code, prompts, and analysis are published. You see everything — raw output, not a curated highlight reel.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODELS -->
+    <section class="section" style="padding-top: 0;">
+      <p class="label-tag anim d1">The Competitors</p>
+      <h2 class="heading-1 anim d2" style="margin-top: 10px;">AI Models in the Arena</h2>
+
+      <div class="models-grid">
+        <div class="glass-card model-card anim d1">
+          <div class="model-logo">🟢</div>
+          <div class="model-name">GPT-4o</div>
+          <div class="model-sub">OpenAI</div>
+          <div class="model-wins">🏆 4 wins</div>
+        </div>
+        <div class="glass-card model-card anim d2">
+          <div class="model-logo">🟣</div>
+          <div class="model-name">Claude 3.5 Sonnet</div>
+          <div class="model-sub">Anthropic</div>
+          <div class="model-wins">🏆 5 wins</div>
+        </div>
+        <div class="glass-card model-card anim d3">
+          <div class="model-logo">🔵</div>
+          <div class="model-name">Gemini 1.5 Pro</div>
+          <div class="model-sub">Google DeepMind</div>
+          <div class="model-wins">🏆 2 wins</div>
+        </div>
+        <div class="glass-card model-card anim d4">
+          <div class="model-logo">🔴</div>
+          <div class="model-name">DeepSeek R1</div>
+          <div class="model-sub">DeepSeek AI</div>
+          <div class="model-wins">🏆 3 wins</div>
+        </div>
+        <div class="glass-card model-card anim d5">
+          <div class="model-logo">⚪</div>
+          <div class="model-name">Mistral Large</div>
+          <div class="model-sub">Mistral AI</div>
+          <div class="model-wins">🏆 1 win</div>
+        </div>
+        <div class="glass-card model-card anim d5" style="animation-delay: 0.52s;">
+          <div class="model-logo">🟡</div>
+          <div class="model-name">Grok 2</div>
+          <div class="model-sub">xAI</div>
+          <div class="model-wins">🏆 0 wins</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="/assets/js/global.js"></script>
 </body>
 </html>

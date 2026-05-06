@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beating Heart Loop</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="https://unpkg.com/ccapture.js@1.0.9/build/CCapture.all.min.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #050507;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    canvas {
+      display: block;
+    }
+    #ui {
+      position: fixed;
+      left: 16px;
+      top: 16px;
+      z-index: 10;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      user-select: none;
+    }
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      font-size: 14px;
+      letter-spacing: 0.2px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+    }
+    button:hover { background: rgba(255, 255, 255, 0.18); }
+    #status {
+      color: rgba(255,255,255,0.75);
+      font-size: 13px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <button id="recordBtn">Record</button>
+    <div id="status">Idle</div>
+  </div>
+
+  <script>
+    const LOOP_SECONDS = 10;
+    const FPS = 60;
+    const LOOP_FRAMES = LOOP_SECONDS * FPS; // 600
+    let capturer = null;
+    let recording = false;
+    let statusEl, recordBtn;
+
+    function setup() {
+      createCanvas(windowWidth, windowHeight);
+      frameRate(FPS);
+      angleMode(RADIANS);
+      colorMode(HSB, 360, 100, 100, 100);
+      noStroke();
+
+      statusEl = document.getElementById('status');
+      recordBtn = document.getElementById('recordBtn');
+
+      recordBtn.addEventListener('click', () => {
+        if (recording) return;
+        capturer = new CCapture({
+          format: 'webm',
+          framerate: FPS,
+          verbose: false
+        });
+        capturer.start();
+        recording = true;
+        statusEl.textContent = 'Recording...';
+      });
+    }
+
+    function draw() {
+      const loopFrame = (frameCount - 1) % LOOP_FRAMES;
+      const loopT = loopFrame / LOOP_FRAMES; // 0..1, seamless at 10 seconds
+      const time = frameCount / FPS; // deterministic time only from frame counter
+
+      drawBackground(loopT, time);
+
+      push();
+      translate(width * 0.5, height * 0.52);
+
+      const breath = 0.018 * sin(TWO_PI * loopT * 2.0);
+      const beatWave = 0.5 + 0.5 * sin(TWO_PI * loopT * 12.0 - HALF_PI);
+      const thump = pow(max(0, beatWave), 8.5);
+
+      const bodyScale = 1 + breath + 0.055 * thump;
+      const squashX = 1 + 0.03 * thump;
+      const squashY = 1 - 0.045 * thump;
+
+      rotate(-0.06 + 0.015 * sin(TWO_PI * loopT * 1.0));
+      scale(bodyScale * squashX, bodyScale * squashY);
+
+      const hueShift = 352 + 10 * sin(TWO_PI * loopT * 12.0);
+      const glowAlpha = 24 + 26 * thump;
+      drawGlow(hueShift, glowAlpha, thump);
+      drawHeart(hueShift, thump, loopT);
+      drawAortaAndVessels(hueShift, thump);
+      drawInnerPulse(hueShift, thump, loopT);
+
+      pop();
+
+      // subtle floor shadow
+      push();
+      translate(width * 0.5, height * 0.80);
+      scale(1.0 + 0.04 * sin(TWO_PI * loopT * 12.0), 1.0 - 0.03 * thump);
+      fill(0, 0, 0, 22);
+      ellipse(0, 0, min(width, height) * 0.23, min(width, height) * 0.05);
+      pop();
+
+      if (recording && capturer) {
+        capturer.capture(document.getElementById('defaultCanvas0'));
+      }
+
+      if (recording && frameCount >= LOOP_FRAMES) {
+        recording = false;
+        statusEl.textContent = 'Saving...';
+        capturer.stop();
+        capturer.save();
+        statusEl.textContent = 'Done';
+      }
+    }
+
+    function drawBackground(loopT, time) {
+      background(6, 35, 5);
+
+      const cx = width * 0.5;
+      const cy = height * 0.48;
+      const maxR = max(width, height) * 0.85;
+
+      for (let i = 6; i >= 1; i--) {
+        const a = 7 + i * 2;
+        const radius = maxR * (0.12 + i * 0.11);
+        fill(350 + 2 * sin(TWO_PI * loopT * 12.0), 40, 14 + i * 2.2, a);
+        ellipse(cx, cy, radius * 1.05, radius * 0.85);
+      }
+
+      // soft ECG-ish ambient waves
+      stroke(355, 55, 55, 16);
+      noFill();
+      beginShape();
+      const steps = 80;
+      for (let i = 0; i <= steps; i++) {
+        const x = map(i, 0, steps, 0, width);
+        const y = height * 0.20
+          + 8 * sin(TWO_PI * (i / steps) * 3.0 + TWO_PI * loopT * 2.0)
+          + 4 * sin(TWO_PI * (i / steps) * 11.0 - TWO_PI * loopT * 5.0);
+        curveVertex(x, y);
+      }
+      endShape();
+      noStroke();
+    }
+
+    function drawGlow(hueShift, alpha, thump) {
+      push();
+      const layers = 6;
+      for (let i = layers; i >= 1; i--) {
+        const s = 1.10 + i * 0.13 + 0.05 * thump;
+        fill(hueShift, 82, 90, alpha / (i * 1.35));
+        drawHeartSilhouette(0, 0, s);
+      }
+      pop();
+    }
+
+    function drawHeart(hueShift, thump, loopT) {
+      // outer silhouette
+      fill(hueShift, 68, 72, 100);
+      stroke((hueShift + 8) % 360, 36, 18, 26);
+      strokeWeight(2.2);
+      drawHeartSilhouette(0, 0, 1.0);
+
+      // deep shading layer
+      noStroke();
+      fill((hueShift + 4) % 360, 62, 56, 34);
+      push();
+      translate(-10, -12);
+      scale(0.88, 0.82);
+      drawHeartSilhouette(0, 0, 1.0);
+      pop();
+
+      // highlight on the left lobe
+      fill(355, 28, 98, 20 + 20 * thump);
+      push();
+      translate(-48, -52);
+      rotate(-0.34);
+      ellipse(0, 0, 120, 86);
+      pop();
+
+      // subtle vein line down the center
+      stroke((hueShift + 18) % 360, 38, 96, 20);
+      strokeWeight(2.4);
+      noFill();
+      beginShape();
+      curveVertex(-8, -22);
+      curveVertex(-8, -22);
+      curveVertex(-15, 4);
+      curveVertex(0, 36 + 8 * thump);
+      curveVertex(10, 78);
+      curveVertex(10, 78);
+      endShape();
+
+      noStroke();
+    }
+
+    function drawHeartSilhouette(x, y, s) {
+      push();
+      translate(x, y);
+      scale(s);
+      beginShape();
+      // Organic heart path based on the classic heart curve, slightly reshaped
+      for (let a = -PI; a <= PI + 0.01; a += 0.02) {
+        const sx = 16 * pow(sin(a), 3);
+        const sy = 13 * cos(a) - 5 * cos(2 * a) - 2 * cos(3 * a) - cos(4 * a);
+        const px = sx * 7.1;
+        const py = -sy * 6.9 + 8;
+        vertex(px, py);
+      }
+      endShape(CLOSE);
+
+      // lower taper to make it feel more anatomical
+      beginShape();
+      vertex(-42, 52);
+      bezierVertex(-24, 84, -5, 104, 0, 130);
+      bezierVertex(7, 107, 24, 88, 38, 55);
+      bezierVertex(16, 64, -16, 66, -42, 52);
+      endShape(CLOSE);
+      pop();
+    }
+
+    function drawAortaAndVessels(hueShift, thump) {
+      // aorta / vessels coming from top
+      push();
+      translate(-16, -116);
+      rotate(-0.16);
+
+      fill((hueShift + 10) % 360, 48, 64, 95);
+      beginShape();
+      vertex(0, 0);
+      bezierVertex(9, -18, 19, -28, 31, -32);
+      bezierVertex(39, -36, 48, -28, 50, -14);
+      bezierVertex(42, -8, 33, -4, 26, 5);
+      bezierVertex(17, 16, 11, 28, 5, 43);
+      bezierVertex(-2, 27, -8, 13, -16, 2);
+      bezierVertex(-24, -9, -32, -17, -41, -23);
+      bezierVertex(-30, -34, -16, -37, 0, 0);
+      endShape(CLOSE);
+
+      fill((hueShift + 22) % 360, 40, 52, 88);
+      ellipse(30, -20, 28 + 3 * thump, 18 + 2 * thump);
+
+      stroke((hueShift + 24) % 360, 40, 90, 34);
+      strokeWeight(2.0);
+      noFill();
+      line(2, -2, 34, -30);
+      line(-4, 4, -30, -24);
+      line(10, 12, 32, 18);
+      noStroke();
+      pop();
+    }
+
+    function drawInnerPulse(hueShift, thump, loopT) {
+      // central glow spot that throbs
+      push();
+      const pulseHue = (hueShift + 4 * sin(TWO_PI * loopT * 12.0)) % 360;
+      fill(pulseHue, 75, 100, 18 + 26 * thump);
+      ellipse(0, 12, 82 + 26 * thump, 92 + 34 * thump);
+
+      fill(0, 0, 100, 6 + 10 * thump);
+      ellipse(-24, -32, 26, 18);
+      pop();
+    }
+
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+    }
+  </script>
+</body>
+</html>

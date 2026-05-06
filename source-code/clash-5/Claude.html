@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Beating Heart | High-Res Render</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="https://unpkg.com/ccapture.js@1.0.9/build/CCapture.all.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #050308;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 14px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    #ui {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    #recordBtn {
+      padding: 8px 26px;
+      background: transparent;
+      color: #cc4444;
+      border: 1px solid #661122;
+      border-radius: 3px;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      transition: all 0.25s;
+    }
+    #recordBtn:hover   { background: #220a0d; border-color: #aa2233; color: #ff6666; }
+    #recordBtn.active  { background: #1a0005; border-color: #ff2244; color: #ff4455;
+                         box-shadow: 0 0 14px rgba(255,30,60,0.35); }
+
+    #status {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: #553344;
+      min-width: 80px;
+    }
+
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <button id="recordBtn">⏺ Record 10s (Max Q)</button>
+    <span id="status">STANDBY</span>
+  </div>
+
+  <script>
+    // ─── Constants ────────────────────────────────────────────────────────────
+    const W    = 600;
+    const H    = 600;
+    const FPS  = 60;
+    const LOOP = 600;   // total frames = 10 s
+    const BPM  = 12;    // exact integer beats per loop → seamless
+
+    // ─── CCapture ─────────────────────────────────────────────────────────────
+    // 🔥 UPGRADE 1: Max Bitrate & Quality
+    let capturer  = new CCapture({ 
+      format: 'webm', 
+      framerate: FPS,
+      name: 'heartbeat_loop_highres', 
+      quality: 100, 
+      videoBitsPerSecond: 5000000 // 50 Mbps
+    });
+    
+    let recording  = false;
+    let recStart   = -1;
+
+    const btn    = document.getElementById('recordBtn');
+    const status = document.getElementById('status');
+
+    btn.addEventListener('click', () => {
+      if (!recording) {
+        capturer.start();
+        recording = true;
+        recStart  = -1;
+        btn.textContent = '⏹ Recording…';
+        btn.classList.add('active');
+      }
+    });
+
+    // ─── p5.js ────────────────────────────────────────────────────────────────
+    function setup() {
+      createCanvas(W, H);
+      
+      // 🔥 UPGRADE 2: Double Internal Render Resolution
+      pixelDensity(2);
+      
+      frameRate(FPS);
+      smooth();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // EVERYTHING BELOW THIS LINE IS 100% UNTOUCHED
+    // ══════════════════════════════════════════════════════════════════════════
+    function draw() {
+      // Bookmark first captured frame (never use millis / Date / performance)
+      if (recording && recStart < 0) recStart = frameCount;
+
+      // ── Deterministic, looping time ──────────────────────────────────────
+      let lf    = frameCount % LOOP;               // 0 … 599
+      let beatT = (lf * BPM / LOOP) % 1.0;        // 0 … 1 within each beat
+
+      // ── Lub-dub envelope ─────────────────────────────────────────────────
+      //    "lub" at beatT=0 ; "dub" at beatT≈0.24
+      let lub  = Math.max(0, 1 - beatT * 11.5) ** 2;
+      let dub  = 0.52 * Math.max(0, 1 - Math.max(0, beatT - 0.24) * 13.5) ** 2;
+      let env  = lub + dub;
+
+      // ── Derived color (deep crimson → bright scarlet on beat) ─────────────
+      let cr = 182 + 62  * env | 0;
+      let cg =  16 + 28  * env | 0;
+      let cb =  20 + 14  * env | 0;
+
+      // ── Scale thump ──────────────────────────────────────────────────────
+      let pulse = 1 + 0.105 * env;
+
+      // ═══════════════════════ RENDER ══════════════════════════════════════
+      background(5, 3, 8);
+
+      // Scanline vignette texture (subtle)
+      drawScanlines();
+
+      // Radial glow halo
+      drawGlow(env, cr, cg, cb);
+
+      // Heart body
+      push();
+        translate(W / 2, H / 2 - 8);
+        scale(pulse);
+        drawHeart(cr, cg, cb, env);
+      pop();
+
+      // ECG ribbon
+      drawECG(lf, cr);
+
+      // ── CCapture ─────────────────────────────────────────────────────────
+      if (recording) {
+        capturer.capture(document.getElementById('defaultCanvas0'));
+        let elapsed = frameCount - recStart + 1;
+        status.textContent = elapsed + ' / 600';
+        if (elapsed >= LOOP) {
+          capturer.stop();
+          capturer.save();
+          recording = false;
+          btn.textContent  = '✓ Saved';
+          btn.classList.remove('active');
+          status.textContent = 'DONE ✓';
+        }
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SCANLINE / VIGNETTE
+    // ─────────────────────────────────────────────────────────────────────────
+    function drawScanlines() {
+      noStroke();
+      // Vignette
+      for (let i = 0; i < 8; i++) {
+        let a = map(i, 0, 7, 0, 80);
+        let s = map(i, 0, 7, 0, 220);
+        fill(0, 0, 0, a);
+        rect(0, 0, s, H);
+        rect(W - s, 0, s, H);
+        rect(0, 0, W, s * 0.6);
+        rect(0, H - s * 0.6, W, s * 0.6);
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // GLOW HALO
+    // ─────────────────────────────────────────────────────────────────────────
+    function drawGlow(env, r, g, b) {
+      noStroke();
+      for (let i = 14; i >= 1; i--) {
+        let a  = i * 2.6 * (0.12 + env * 0.88);
+        let rx = 148 + i * 22;
+        let ry = rx * 0.86;
+        fill(r, g * 0.25, b * 0.25, a);
+        ellipse(W / 2, H / 2 - 8, rx, ry);
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // HEART
+    // ─────────────────────────────────────────────────────────────────────────
+    function drawHeart(r, g, b, env) {
+      const S = 0.86;
+      push();
+      scale(S);
+
+      // ── Drop shadow ──
+      push();
+        translate(9, 16);
+        fill(0, 0, 0, 80);
+        noStroke();
+        heartOutline();
+      pop();
+
+      // ── Main body fill ──
+      fill(r, g, b);
+      stroke(r * 0.32, g * 0.15, b * 0.13);
+      strokeWeight(3 / S);
+      heartOutline();
+
+      // ── Lower-half shadow (depth) ──
+      fill(r * 0.48, g * 0.20, b * 0.18, 168);
+      noStroke();
+      heartLowerShade();
+
+      // ── Left-side cool shadow ──
+      fill(20, 5, 30, 80);
+      noStroke();
+      heartLeftShade();
+
+      // ── Interventricular groove ──
+      stroke(r * 0.38, g * 0.16, b * 0.13, 175);
+      strokeWeight(2.2 / S);
+      noFill();
+      beginShape();
+        vertex(2, -76);
+        bezierVertex(-14, -5, -12, 52, -26, 102);
+      endShape();
+
+      // ── Surface specular highlights ──
+      fill(255, 255, 255, 42 + 32 * env);
+      noStroke();
+      heartHighlight();
+
+      // ── Beat luminance flash ──
+      if (env > 0.06) {
+        fill(255, 200, 195, env * 52);
+        noStroke();
+        heartOutline();
+      }
+
+      // ── Coronary artery lines ──
+      drawCoronaryLines(r, g, b);
+
+      // ── Aorta + pulmonary artery ──
+      drawVessels(r, g, b);
+
+      pop();
+    }
+
+    // Heart outline — two lobes, apex bottom-left, centered at (0,0)
+    // Bounding box: ~X [-124, 118], ~Y [-124, 148]
+    function heartOutline() {
+      beginShape();
+        vertex(10, -86);
+        // Right lobe (viewer's right)
+        bezierVertex( 42, -122, 114, -100, 118, -52);
+        bezierVertex(122,  -6, 106,  44,  84,  84);
+        // Curve to apex
+        bezierVertex( 58, 124,  22, 148, -10, 148);
+        bezierVertex(-40, 148, -74, 118, -98,  76);
+        // Up left side
+        bezierVertex(-124,  34, -122, -24, -108, -62);
+        // Left lobe (viewer's left)
+        bezierVertex( -94, -102, -58, -124, -32, -108);
+        bezierVertex( -14,  -94,  -4,  -84,  10,  -86);
+      endShape(CLOSE);
+    }
+
+    function heartLowerShade() {
+      beginShape();
+        vertex(84, 74);
+        bezierVertex( 58, 124,  22, 148, -10, 148);
+        bezierVertex(-40, 148, -74, 118, -98,  76);
+        bezierVertex(-114,  40, -112,  6, -98, -16);
+        bezierVertex( -64,  30,   4,  60,  84,  74);
+      endShape(CLOSE);
+    }
+
+    function heartLeftShade() {
+      beginShape();
+        vertex(-108, -62);
+        bezierVertex(-124,  34, -122, -24, -108, -62);
+        bezierVertex( -94, -102, -58, -124, -32, -108);
+        bezierVertex( -68, -92, -95, -40, -108, -62);
+      endShape(CLOSE);
+    }
+
+    function heartHighlight() {
+      // Right lobe
+      push();
+        translate(56, -60);
+        rotate(-0.48);
+        ellipse(0, 0, 60, 36);
+      pop();
+      // Left lobe (dimmer)
+      push();
+        fill(255, 255, 255, 22);
+        translate(-66, -58);
+        rotate(0.38);
+        ellipse(0, 0, 44, 26);
+      pop();
+    }
+
+    // Fine coronary artery detail lines
+    function drawCoronaryLines(r, g, b) {
+      let lc = [r * 0.42, g * 0.20, b * 0.18];
+      strokeWeight(1.4);
+      stroke(lc[0], lc[1], lc[2], 140);
+      noFill();
+      // Left anterior descending (LAD) — runs down the groove
+      beginShape();
+        vertex(2, -76);
+        bezierVertex(-6, 20, -10, 70, -18, 118);
+      endShape();
+      // Right coronary (RCA) — curves right
+      beginShape();
+        vertex(8, -68);
+        bezierVertex(50, -40, 72, 10, 62, 60);
+      endShape();
+      // Left circumflex — arcs left
+      beginShape();
+        vertex(-8, -68);
+        bezierVertex(-50, -46, -72,  6, -62, 50);
+      endShape();
+      // Small branches
+      strokeWeight(0.8);
+      stroke(lc[0], lc[1], lc[2], 90);
+      line(-18, 20, -42, 30);
+      line(-18, 45, -36, 60);
+      line( 62, 30,  80, 42);
+    }
+
+    // Aortic arch and pulmonary artery
+    function drawVessels(r, g, b) {
+      let dk  = [r * 0.36, g * 0.18, b * 0.14];
+      let lt  = [r * 0.78, g * 0.56, b * 0.50];
+
+      noFill();
+
+      // ── Aortic arch (curves right then down) ──────────────────────────
+      for (let p = 0; p < 2; p++) {
+        strokeWeight(p === 0 ? 14 : 10);
+        stroke(p === 0 ? dk[0] : lt[0],
+               p === 0 ? dk[1] : lt[1],
+               p === 0 ? dk[2] : lt[2]);
+        beginShape();
+          vertex( 4, -84);
+          bezierVertex( 20, -154, 84, -164,  94, -118);
+          bezierVertex( 98,  -92, 86,  -72,  76,  -56);
+        endShape();
+        // Brachiocephalic branches
+        strokeWeight(p === 0 ? 8 : 5);
+        beginShape();
+          vertex(76, -56);
+          bezierVertex(102, -50, 112, -36, 110, -24);
+        endShape();
+        beginShape();
+          vertex(76, -56);
+          bezierVertex( 72, -36,  68, -22,  70, -12);
+        endShape();
+        strokeWeight(p === 0 ? 6 : 4);
+        beginShape();
+          vertex(42, -130);
+          bezierVertex( 56, -138, 68, -134,  72, -122);
+        endShape();
+      }
+
+      // ── Pulmonary artery (arcs left) ──────────────────────────────────
+      for (let p = 0; p < 2; p++) {
+        strokeWeight(p === 0 ? 13 : 9);
+        stroke(p === 0 ? dk[0] : lt[0],
+               p === 0 ? dk[1] : lt[1],
+               p === 0 ? dk[2] : lt[2]);
+        beginShape();
+          vertex(-8, -84);
+          bezierVertex(-30, -134, -74, -144, -78, -120);
+          bezierVertex(-80, -103, -72,  -88, -64,  -82);
+        endShape();
+        // Pulmonary bifurcation
+        strokeWeight(p === 0 ? 7 : 5);
+        beginShape();
+          vertex(-64, -82);
+          bezierVertex(-82, -80, -96, -70, -98, -56);
+        endShape();
+        beginShape();
+          vertex(-64, -82);
+          bezierVertex(-48, -72, -42, -58, -44, -46);
+        endShape();
+      }
+
+      // ── Superior vena cava (stubby, top-right) ────────────────────────
+      for (let p = 0; p < 2; p++) {
+        strokeWeight(p === 0 ? 10 : 7);
+        stroke(p === 0 ? dk[0] * 0.8 : lt[0] * 0.85,
+               p === 0 ? dk[1] * 0.8 : lt[1] * 0.85,
+               p === 0 ? dk[2] * 0.8 : lt[2] * 0.85);
+        beginShape();
+          vertex(100, -50);
+          bezierVertex(112, -30, 114, -6, 108, 10);
+        endShape();
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ECG RIBBON
+    // ─────────────────────────────────────────────────────────────────────────
+    function drawECG(lf, baseR) {
+      let y0 = H - 50;
+      let x0 = 38;
+      let lw = W - 76;
+
+      // Track line
+      stroke(55, 12, 16, 110);
+      strokeWeight(1);
+      line(x0, y0, x0 + lw, y0);
+
+      // Waveform — one line-segment per pixel for per-segment tinting
+      strokeWeight(1.7);
+      for (let px = 1; px < lw; px++) {
+        let t1  = ((px - 1) / lw + lf / LOOP) % 1.0;
+        let t2  = (px       / lw + lf / LOOP) % 1.0;
+        let w1  = ecgWave((t1 * BPM) % 1.0);
+        let w2  = ecgWave((t2 * BPM) % 1.0);
+        let brt = map(Math.abs(w2), 0, 1, 0.55, 1.35);
+        stroke(Math.min(255, baseR * brt), 30, 28, 215);
+        line(x0 + px - 1, y0 - w1 * 32, x0 + px, y0 - w2 * 32);
+      }
+
+      // Label
+      noStroke();
+      fill(100, 28, 34, 160);
+      textSize(9);
+      textStyle(NORMAL);
+      text('ECG  72 BPM', x0, y0 + 16);
+    }
+
+    // PQRST complex (t: 0..1 → amplitude -1..1)
+    function ecgWave(t) {
+      if (t < 0.070) return  0.18 * Math.sin(t / 0.070 * Math.PI);         // P wave
+      if (t < 0.120) return  0.0;                                          // PQ segment
+      if (t < 0.150) return -0.34 * Math.sin((t-0.12) / 0.03 * Math.PI);  // Q dip
+      if (t < 0.190) return         Math.sin((t-0.15) / 0.04 * Math.PI);  // R peak
+      if (t < 0.225) return -0.24 * Math.sin((t-0.19) / 0.035 * Math.PI); // S dip
+      if (t < 0.320) return  0.0;                                          // ST segment
+      if (t < 0.480) return  0.40 * Math.sin((t-0.32) / 0.16  * Math.PI); // T wave
+      return 0.0;                                                          // diastole
+    }
+
+  </script>
+</body>
+</html>

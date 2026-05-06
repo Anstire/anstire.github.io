@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harmonic Spring Wave</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050508;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  canvas { display: block; }
+  #ui {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    color: #aaddff;
+    font-size: 13px;
+    pointer-events: none;
+    user-select: none;
+    text-shadow: 0 0 12px rgba(100, 200, 255, 0.4);
+    line-height: 1.6;
+  }
+  #ui h1 {
+    font-size: 20px;
+    font-weight: 300;
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+    color: #ffffff;
+  }
+  #ui .sub {
+    font-size: 11px;
+    opacity: 0.5;
+    letter-spacing: 1px;
+  }
+  #bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #00d2ff, #7b2cbf);
+    box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <h1>HARMONIC SPRING WAVE</h1>
+  <div>Time: <span id="time">0.00</span> / 10.00 s</div>
+  <div class="sub">SYNCHRONIZED &rarr; CHAOS &rarr; SYNCHRONIZED</div>
+</div>
+<div id="bar"></div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = innerWidth;
+  H = canvas.height = innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* ---------- CONFIGURATION ---------- */
+const N = 30;                 // Number of oscillating masses
+const LOOP = 10.0;            // Seamless loop duration (seconds)
+const BASE_FREQ = 2 * Math.PI / LOOP;
+const AMP = 70;               // Base oscillation amplitude
+const NUM_CHAOS_MODES = 20;   // Higher spatial modes mixed in
+const MASS_RADIUS = 5;
+
+/* Precompute deterministic "random" phases so every reload is identical */
+function seededPhase(k) {
+  return ((k * 137.508) % 1) * Math.PI * 2;
+}
+
+const modes = [];
+// Mode 0: the synchronized (uniform) mode — all masses move as one
+modes.push({ kind: 'sync', freq: BASE_FREQ, phase: 0, weight: 1.0 });
+
+// Modes 1..N: spatial standing waves with fixed-end boundary conditions
+for (let k = 1; k <= NUM_CHAOS_MODES; k++) {
+  modes.push({
+    kind: 'spatial',
+    modeNum: k + 1,                 // sin((k+1) * pi * n / (N+1))
+    freq: (k + 1) * BASE_FREQ,      // integer multiple → guaranteed 10 s loop
+    phase: seededPhase(k),
+    weight: 1 / (k * 0.6 + 1)       // higher modes are weaker
+  });
+}
+
+/* Displacement of mass n (1-indexed) at time t */
+function displacement(n, t) {
+  // Envelope: 1 at t=0 and t=10 (sync), 0 at t=5 (chaos)
+  const syncAmt = Math.cos(Math.PI * t / LOOP) ** 2;
+
+  let y = 0;
+
+  // Sync component — all masses share the same motion
+  const syncMode = modes[0];
+  y += syncAmt * AMP * syncMode.weight *
+       Math.cos(syncMode.freq * t + syncMode.phase);
+
+  // Chaotic component — superposition of higher spatial modes
+  let chaos = 0;
+  for (let i = 1; i < modes.length; i++) {
+    const m = modes[i];
+    const spatial = Math.sin(m.modeNum * Math.PI * n / (N + 1));
+    chaos += AMP * m.weight * spatial *
+             Math.cos(m.freq * t + m.phase);
+  }
+  y += (1 - syncAmt) * chaos;
+
+  return y;
+}
+
+/* Numerical velocity for color-coding */
+function velocity(n, t) {
+  const dt = 0.005;
+  return (displacement(n, t + dt) - displacement(n, t - dt)) / (2 * dt);
+}
+
+/* Draw a coil spring between two points */
+function drawSpring(x1, y1, x2, y2, coils, width, color, opacity) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 1) return;
+
+  const nx = dx / len;
+  const ny = dy / len;
+  const px = -ny;   // perpendicular unit vector
+  const py = nx;
+
+  ctx.beginPath();
+  const steps = coils * 10;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    // Sinusoidal coil profile
+    const coil = Math.sin(t * coils * Math.PI * 2);
+    // Slight taper toward ends so it joins smoothly to anchors/masses
+    const taper = 1 - Math.abs(t - 0.5) * 0.25;
+    const x = x1 + dx * t + px * coil * width * taper;
+    const y = y1 + dy * t + py * coil * width * taper;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = opacity;
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+/* ---------- RENDER LOOP ---------- */
+let startTime = performance.now();
+
+function frame(now) {
+  let t = (now - startTime) / 1000;
+  t = t % LOOP;                       // seamless 10-second cycle
+
+  document.getElementById('time').textContent = t.toFixed(2);
+  document.getElementById('bar').style.width = (t / LOOP * 100) + '%';
+
+  /* Fade trail */
+  ctx.fillStyle = 'rgba(5, 5, 8, 0.22)';
+  ctx.fillRect(0, 0, W, H);
+
+  const centerX = W / 2;
+  const spacing = Math.min(W / (N + 6), 32);
+  const startX = centerX - (N - 1) * spacing / 2;
+  const restY = H / 2;
+
+  // Compute mass positions & velocities
+  const pos = [];
+  const vel = [];
+  for (let n = 1; n <= N; n++) {
+    const d = displacement(n, t);
+    pos.push({ x: startX + (n - 1) * spacing, y: restY + d });
+    vel.push(velocity(n, t));
+  }
+
+  // Anchor positions
+  const anchorTopY = restY - AMP - 100;
+  const anchorBotY = restY + AMP + 100;
+
+  /* 1. Faint wave envelope line through masses */
+  ctx.beginPath();
+  ctx.moveTo(pos[0].x, pos[0].y);
+  for (let i = 1; i < N; i++) {
+    const mx = (pos[i].x + pos[i - 1].x) / 2;
+    const my = (pos[i].y + pos[i - 1].y) / 2;
+    ctx.quadraticCurveTo(pos[i - 1].x, pos[i - 1].y, mx, my);
+  }
+  ctx.lineTo(pos[N - 1].x, pos[N - 1].y);
+  ctx.strokeStyle = 'rgba(100, 200, 255, 0.06)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  /* 2. Springs */
+  // Top anchor → first mass
+  drawSpring(centerX, anchorTopY, pos[0].x, pos[0].y - MASS_RADIUS,
+             12, 9, '#4fc3f7', 0.35);
+
+  // Mass-to-mass springs
+  for (let i = 0; i < N - 1; i++) {
+    const tension = Math.abs(pos[i + 1].y - pos[i].y);
+    const r = Math.min(80 + tension * 1.5, 180);
+    const g = Math.min(180 + tension * 0.5, 240);
+    const b = 255;
+    drawSpring(
+      pos[i].x, pos[i].y + MASS_RADIUS,
+      pos[i + 1].x, pos[i + 1].y - MASS_RADIUS,
+      9, 7, `rgb(${r|0},${g|0},${b})`, 0.3
+    );
+  }
+
+  // Last mass → bottom anchor
+  drawSpring(pos[N - 1].x, pos[N - 1].y + MASS_RADIUS,
+             centerX, anchorBotY, 12, 9, '#4fc3f7', 0.35);
+
+  /* 3. Anchor points */
+  ctx.fillStyle = '#4fc3f7';
+  ctx.shadowColor = '#4fc3f7';
+  ctx.shadowBlur = 10;
+  ctx.beginPath(); ctx.arc(centerX, anchorTopY, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(centerX, anchorBotY, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  /* 4. Masses */
+  for (let i = 0; i < N; i++) {
+    const p = pos[i];
+    const v = vel[i];
+    const speed = Math.abs(v);
+
+    // Dynamic color: cool blue when slow → hot pink when fast
+    const hue = 200 + Math.min(speed * 1.8, 140);
+    const sat = 70 + Math.min(speed * 0.8, 30);
+    const lit = 55 + Math.min(speed * 0.4, 35);
+
+    // Outer glow
+    const glowR = 18 + Math.min(speed * 0.6, 15);
+    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
+    grad.addColorStop(0, `hsla(${hue}, ${sat}%, ${lit}%, 0.9)`);
+    grad.addColorStop(0.4, `hsla(${hue}, ${sat}%, ${lit}%, 0.25)`);
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Solid core
+    ctx.fillStyle = `hsl(${hue}, ${sat}%, ${lit + 25}%)`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, MASS_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

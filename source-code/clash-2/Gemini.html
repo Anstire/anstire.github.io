@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Phyllotaxis Spiral</title>
+    <style>
+        /* Reset margins and ensure the background is pitch black */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="spiralCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('spiralCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height, cx, cy;
+
+        // Ensure the canvas scales to the window size, critical for mobile
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            cx = width / 2;
+            cy = height / 2;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Phyllotaxis parameters
+        let currentN = 0;           // Starts at 0 to animate growing outward
+        const maxN = 2500;          // Maximum number of particles
+        const c = 8;                // Scaling constant for the radius
+
+        function animate() {
+            // Clear the screen completely each frame for the breathing effect
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+
+            // Grow the spiral point-by-point until it hits maxN
+            if (currentN < maxN) {
+                currentN += 8; // Adjust this value to change growth speed
+            }
+
+            // Time variable for the secondary breathing/kaleidoscope animation
+            const time = Date.now() * 0.0005; 
+            
+            // Fluctuate the golden angle slightly around 137.5 degrees
+            const angleOffset = Math.sin(time) * 0.15; 
+            const goldenAngle = (137.5 + angleOffset) * (Math.PI / 180);
+
+            // Draw the particles
+            for (let i = 0; i < currentN; i++) {
+                const angle = i * goldenAngle;
+                const r = c * Math.sqrt(i);
+
+                const x = cx + r * Math.cos(angle);
+                const y = cy + r * Math.sin(angle);
+
+                // Calculate HSL color:
+                // Base hue is 230 (blue), oscillating between 180 (cyan) and 280 (purple)
+                // We use the radius 'r' and 'time' to make the colors ripple outward
+                const hue = 230 + Math.sin(r * 0.02 - time * 3) * 50;
+                
+                ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
+                
+                ctx.beginPath();
+                // Slightly vary the particle size based on its index for texture
+                const particleSize = 1.5 + (i / maxN) * 1.5; 
+                ctx.arc(x, y, particleSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Loop the animation
+            requestAnimationFrame(animate);
+        }
+
+        // Start the loop
+        animate();
+    </script>
+</body>
+</html>

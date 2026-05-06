@@ -9,27 +9,16 @@
   <style>
     .src-hero { padding: calc(var(--nav-height) + 72px) 24px 64px; max-width: 1200px; margin: 0 auto; }
 
-    .placeholder-notice {
-      display: flex; align-items: center; gap: 10px;
-      padding: 14px 20px;
-      border-radius: var(--radius-md);
-      background: rgba(var(--accent-rgb), 0.06);
-      border: 1px dashed rgba(var(--accent-rgb), 0.25);
-      font-size: 13.5px; color: var(--text-secondary);
-      margin-bottom: 40px;
-    }
-
     /* Search */
     .search-row { display: flex; gap: 12px; align-items: center; margin-bottom: 40px; }
     .search-wrap { flex: 1; position: relative; }
     .search-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); pointer-events: none; }
     .search-wrap .input { padding-left: 42px; }
-    .lang-filter { min-width: 160px; }
 
     /* Clash entries */
     .clash-entries { display: flex; flex-direction: column; gap: 16px; }
 
-    .entry-card { padding: 28px 32px; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; }
+    .entry-card { padding: 28px 32px; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; text-decoration: none; }
     @media (max-width: 640px) { .entry-card { grid-template-columns: 1fr; } }
 
     .entry-left {}
@@ -84,115 +73,157 @@
 
     <section class="section" style="padding-top: 0;">
 
-      <div class="placeholder-notice anim d1">
-        <span>🚧</span> Source code entries will appear here as Code Clashes are published. Placeholder layouts shown below.
-      </div>
-
       <!-- Search -->
       <div class="search-row anim d2">
         <div class="search-wrap">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input type="text" class="input" placeholder="Search clashes, languages, topics…" oninput="searchEntries(this.value)">
+          <input type="text" class="input" placeholder="Search clashes, models, topics…" oninput="searchEntries(this.value)">
         </div>
-        <select class="input lang-filter" onchange="filterLang(this.value)">
-          <option value="">All Languages</option>
-          <option value="python">Python</option>
-          <option value="typescript">TypeScript</option>
-          <option value="rust">Rust</option>
-          <option value="go">Go</option>
-          <option value="cpp">C++</option>
-        </select>
       </div>
 
       <!-- Entries -->
       <div class="clash-entries" id="entriesContainer">
 
-        <div class="glass-card entry-card anim d1" data-lang="python typescript">
+        <a href="/source-code/clash-1/" class="glass-card entry-card anim d1" data-lang="html javascript">
           <div class="entry-left">
             <div class="entry-top">
               <span class="entry-num">Clash #001</span>
-              <span class="entry-cat">Sorting Algorithms</span>
+              <span class="entry-cat">Physics Simulation</span>
             </div>
-            <div class="entry-title">Quicksort vs Mergesort Under Constraints</div>
-            <div class="entry-desc">Three models tackle optimal sorting with strict O(n log n) time and O(1) space targets. Watch how each approaches in-place optimizations differently.</div>
+            <div class="entry-title">Newton's Cradle</div>
+            <div class="entry-desc">Four models build a realistic Newton's Cradle with Matter.js — metallic sphere rendering, elastic collision physics, and interactive controls.</div>
             <div class="entry-langs">
-              <span class="lang-chip">🐍 Python</span>
-              <span class="lang-chip">TS TypeScript</span>
-              <span class="model-chip-sm">GPT-4o</span>
-              <span class="model-chip-sm">Claude 3.5</span>
-              <span class="model-chip-sm">Gemini 1.5</span>
-            </div>
-            <div class="code-preview">
-              <span class="code-cm"># Claude 3.5 Sonnet — Quicksort implementation</span><br>
-              <span class="code-kw">def</span> <span class="code-fn">quicksort</span>(arr: list, lo: int = 0, hi: int = <span class="code-kw">None</span>) -> list:<br>
-              &nbsp;&nbsp;<span class="code-kw">if</span> hi <span class="code-kw">is None</span>: hi = len(arr) - 1<br>
-              &nbsp;&nbsp;<span class="code-kw">if</span> lo &lt; hi:<br>
-              &nbsp;&nbsp;&nbsp;&nbsp;pivot = <span class="code-fn">partition</span>(arr, lo, hi)
-            </div>
-          </div>
-          <div class="entry-actions">
-            <div class="entry-stat"><strong>3</strong> Solutions</div>
-            <a href="#" class="btn btn-primary btn-sm">View Code</a>
-            <a href="#" class="btn btn-ghost btn-sm">Watch Clash</a>
-          </div>
-        </div>
-
-        <div class="glass-card entry-card anim d2" data-lang="typescript">
-          <div class="entry-left">
-            <div class="entry-top">
-              <span class="entry-num">Clash #002</span>
-              <span class="entry-cat">UI Generation</span>
-            </div>
-            <div class="entry-title">Premium Dashboard Component in 60 Seconds</div>
-            <div class="entry-desc">Pixel-perfect, accessible React dashboard components generated from a single-line prompt. Judged on visual quality, accessibility score, and clean code structure.</div>
-            <div class="entry-langs">
-              <span class="lang-chip">⚛️ React</span>
-              <span class="lang-chip">TS TypeScript</span>
-              <span class="model-chip-sm">GPT-4o</span>
-              <span class="model-chip-sm">Gemini 1.5</span>
-            </div>
-            <div class="code-preview">
-              <span class="code-cm">// GPT-4o — Dashboard Card Component</span><br>
-              <span class="code-kw">const</span> <span class="code-fn">DashCard</span> = ({ title, value, delta }: Props) => (<br>
-              &nbsp;&nbsp;&lt;div className=<span class="code-str">"glass-card p-6"</span>&gt;<br>
-              &nbsp;&nbsp;&nbsp;&nbsp;&lt;p className=<span class="code-str">"text-sm opacity-60"</span>&gt;{title}&lt;/p&gt;
-            </div>
-          </div>
-          <div class="entry-actions">
-            <div class="entry-stat"><strong>2</strong> Solutions</div>
-            <a href="#" class="btn btn-primary btn-sm">View Code</a>
-            <a href="#" class="btn btn-ghost btn-sm">Watch Clash</a>
-          </div>
-        </div>
-
-        <div class="glass-card entry-card anim d3" data-lang="python cpp">
-          <div class="entry-left">
-            <div class="entry-top">
-              <span class="entry-num">Clash #003</span>
-              <span class="entry-cat">Dynamic Programming</span>
-            </div>
-            <div class="entry-title">LeetCode Hard: Edit Distance & Knapsack Variants</div>
-            <div class="entry-desc">The hardest class of dynamic programming challenges. Memoization vs tabulation, space optimization, and reconstruction — all tested simultaneously.</div>
-            <div class="entry-langs">
-              <span class="lang-chip">🐍 Python</span>
-              <span class="lang-chip">⚙️ C++</span>
-              <span class="model-chip-sm">Claude 3.5</span>
-              <span class="model-chip-sm">GPT-4o</span>
+              <span class="lang-chip">📄 HTML/JS</span>
+              <span class="model-chip-sm">ChatGPT</span>
+              <span class="model-chip-sm">Claude</span>
+              <span class="model-chip-sm">Gemini</span>
               <span class="model-chip-sm">DeepSeek</span>
             </div>
             <div class="code-preview">
-              <span class="code-cm"># DeepSeek R1 — Edit distance with path reconstruction</span><br>
-              <span class="code-kw">def</span> <span class="code-fn">edit_distance</span>(s1: str, s2: str) -> tuple[int, list]:<br>
-              &nbsp;&nbsp;m, n = len(s1), len(s2)<br>
-              &nbsp;&nbsp;dp = [[0] * (n + 1) <span class="code-kw">for</span> _ <span class="code-kw">in</span> range(m + 1)]
+              <span class="code-cm">// Matter.js — Newton's Cradle</span><br>
+              <span class="code-kw">const</span> { <span class="code-fn">Engine</span>, <span class="code-fn">Bodies</span>, <span class="code-fn">Constraint</span> } = Matter;<br>
+              <span class="code-kw">const</span> engine = <span class="code-fn">Engine.create</span>({ gravity: { y: 1 } });<br>
+              <span class="code-kw">const</span> bob = <span class="code-fn">Bodies.circle</span>(x, y, BALL_RADIUS, {<br>
+              &nbsp;&nbsp;restitution: <span class="code-str">1</span>, friction: <span class="code-str">0</span>
             </div>
           </div>
           <div class="entry-actions">
-            <div class="entry-stat"><strong>3</strong> Solutions</div>
-            <a href="#" class="btn btn-primary btn-sm">View Code</a>
-            <a href="#" class="btn btn-ghost btn-sm">Watch Clash</a>
+            <div class="entry-stat"><strong>4</strong> Solutions</div>
+            <span class="btn btn-primary btn-sm">View Code →</span>
           </div>
-        </div>
+        </a>
+
+        <a href="/source-code/clash-2/" class="glass-card entry-card anim d2" data-lang="html javascript">
+          <div class="entry-left">
+            <div class="entry-top">
+              <span class="entry-num">Clash #002</span>
+              <span class="entry-cat">Mathematical Art</span>
+            </div>
+            <div class="entry-title">Phyllotaxis Spiral</div>
+            <div class="entry-desc">Mesmerizing golden-angle spirals — the pattern found in sunflowers and pinecones. Real-time animated mathematical beauty on Canvas.</div>
+            <div class="entry-langs">
+              <span class="lang-chip">📄 HTML/JS</span>
+              <span class="model-chip-sm">ChatGPT</span>
+              <span class="model-chip-sm">Claude</span>
+              <span class="model-chip-sm">DeepSeek</span>
+              <span class="model-chip-sm">Gemini</span>
+            </div>
+            <div class="code-preview">
+              <span class="code-cm">// Phyllotaxis — Golden Angle Spiral</span><br>
+              <span class="code-kw">const</span> goldenAngle = <span class="code-str">137.5</span> * Math.PI / <span class="code-str">180</span>;<br>
+              <span class="code-kw">const</span> radius = c * <span class="code-fn">Math.sqrt</span>(n) * <span class="code-str">18</span>;<br>
+              <span class="code-kw">const</span> x = cx + <span class="code-fn">Math.cos</span>(angle) * radius;
+            </div>
+          </div>
+          <div class="entry-actions">
+            <div class="entry-stat"><strong>4</strong> Solutions</div>
+            <span class="btn btn-primary btn-sm">View Code →</span>
+          </div>
+        </a>
+
+        <a href="/source-code/clash-3/" class="glass-card entry-card anim d3" data-lang="html javascript">
+          <div class="entry-left">
+            <div class="entry-top">
+              <span class="entry-num">Clash #003</span>
+              <span class="entry-cat">Math Visualization</span>
+            </div>
+            <div class="entry-title">Pi Constellation</div>
+            <div class="entry-desc">The digits of Pi become a constellation map — each digit determines the direction of a neon line segment, creating glowing pathways that wrap around the screen.</div>
+            <div class="entry-langs">
+              <span class="lang-chip">📄 HTML/JS</span>
+              <span class="model-chip-sm">ChatGPT</span>
+              <span class="model-chip-sm">Claude</span>
+              <span class="model-chip-sm">Gemini</span>
+              <span class="model-chip-sm">Kimi</span>
+            </div>
+            <div class="code-preview">
+              <span class="code-cm">// Pi Constellation — digit walker</span><br>
+              <span class="code-kw">const</span> digit = pi.<span class="code-fn">charCodeAt</span>(i) - <span class="code-str">48</span>;<br>
+              <span class="code-kw">const</span> angle = digit * Math.PI * <span class="code-str">2</span> / <span class="code-str">10</span>;<br>
+              <span class="code-kw">const</span> nx = x + <span class="code-fn">Math.cos</span>(angle) * STEP;
+            </div>
+          </div>
+          <div class="entry-actions">
+            <div class="entry-stat"><strong>4</strong> Solutions</div>
+            <span class="btn btn-primary btn-sm">View Code →</span>
+          </div>
+        </a>
+
+        <a href="/source-code/clash-4/" class="glass-card entry-card anim d4" data-lang="html javascript">
+          <div class="entry-left">
+            <div class="entry-top">
+              <span class="entry-num">Clash #004</span>
+              <span class="entry-cat">Wave Physics</span>
+            </div>
+            <div class="entry-title">Harmonic Spring Wave</div>
+            <div class="entry-desc">A seamless 10-second loop of harmonic spring physics — masses connected by springs oscillating between sync and chaos. Pure mathematical motion art.</div>
+            <div class="entry-langs">
+              <span class="lang-chip">📄 HTML/JS</span>
+              <span class="model-chip-sm">ChatGPT</span>
+              <span class="model-chip-sm">DeepSeek</span>
+              <span class="model-chip-sm">Gemini</span>
+              <span class="model-chip-sm">Kimi</span>
+            </div>
+            <div class="code-preview">
+              <span class="code-cm">// Harmonic Spring — seamless 10s loop</span><br>
+              <span class="code-kw">function</span> <span class="code-fn">drawSpring</span>(x1, y1, x2, y2, coils, amp) {<br>
+              &nbsp;&nbsp;<span class="code-kw">const</span> wave = <span class="code-fn">Math.sin</span>(t * Math.PI * coils * <span class="code-str">2</span>);<br>
+              &nbsp;&nbsp;<span class="code-kw">const</span> bend = amp * wave;
+            </div>
+          </div>
+          <div class="entry-actions">
+            <div class="entry-stat"><strong>4</strong> Solutions</div>
+            <span class="btn btn-primary btn-sm">View Code →</span>
+          </div>
+        </a>
+
+        <a href="/source-code/clash-5/" class="glass-card entry-card anim d5" data-lang="html javascript">
+          <div class="entry-left">
+            <div class="entry-top">
+              <span class="entry-num">Clash #005</span>
+              <span class="entry-cat">Creative Animation</span>
+            </div>
+            <div class="entry-title">Beating Heart Animation</div>
+            <div class="entry-desc">A 10-second seamless beating heart loop — anatomical detail with aorta, vessels, inner pulse glow, ECG ambient waves, and thump squash dynamics.</div>
+            <div class="entry-langs">
+              <span class="lang-chip">📄 HTML/JS</span>
+              <span class="model-chip-sm">ChatGPT</span>
+              <span class="model-chip-sm">Claude</span>
+              <span class="model-chip-sm">DeepSeek</span>
+              <span class="model-chip-sm">Gemini</span>
+            </div>
+            <div class="code-preview">
+              <span class="code-cm">// Beating Heart — p5.js seamless loop</span><br>
+              <span class="code-kw">const</span> thump = <span class="code-fn">pow</span>(<span class="code-fn">max</span>(<span class="code-str">0</span>, beatWave), <span class="code-str">8.5</span>);<br>
+              <span class="code-kw">const</span> bodyScale = <span class="code-str">1</span> + breath + <span class="code-str">0.055</span> * thump;<br>
+              <span class="code-fn">drawHeartSilhouette</span>(<span class="code-str">0</span>, <span class="code-str">0</span>, bodyScale);
+            </div>
+          </div>
+          <div class="entry-actions">
+            <div class="entry-stat"><strong>4</strong> Solutions</div>
+            <span class="btn btn-primary btn-sm">View Code →</span>
+          </div>
+        </a>
 
       </div>
     </section>
@@ -207,13 +238,6 @@
       cards.forEach(card => {
         const text = card.textContent.toLowerCase();
         card.style.display = text.includes(q) ? '' : 'none';
-      });
-    }
-    function filterLang(lang) {
-      const cards = document.querySelectorAll('.entry-card');
-      cards.forEach(card => {
-        const langs = (card.dataset.lang || '');
-        card.style.display = (!lang || langs.includes(lang)) ? '' : 'none';
       });
     }
   </script>

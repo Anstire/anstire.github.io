@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmonic Spring Wave - 10s Loop</title>
+    <style>
+        :root {
+            --bg: #0a0a14;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+            cursor: default;
+        }
+
+        .container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        canvas {
+            display: block;
+            border-radius: 20px;
+            background: radial-gradient(ellipse at center,
+                    #12122a 0%,
+                    #0c0c1f 40%,
+                    #080818 100%);
+            box-shadow:
+                0 0 80px rgba(80, 60, 180, 0.15),
+                0 0 30px rgba(40, 30, 100, 0.25),
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.02);
+            max-width: 95vw;
+            max-height: 75vh;
+            transition: box-shadow 0.8s ease;
+        }
+
+        canvas:hover {
+            box-shadow:
+                0 0 100px rgba(100, 70, 210, 0.2),
+                0 0 40px rgba(50, 35, 120, 0.3),
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        }
+
+        .info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            color: rgba(200, 200, 230, 0.8);
+            font-size: 13px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            font-weight: 400;
+        }
+
+        .cycle-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-bar {
+            width: 120px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 2px;
+            background: linear-gradient(90deg,
+                    #6366f1,
+                    #8b5cf6,
+                    #a78bfa,
+                    #c4b5fd,
+                    #a78bfa,
+                    #8b5cf6,
+                    #6366f1);
+            background-size: 200% 100%;
+            transition: width 0.05s linear;
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+        }
+
+        .phase-label {
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            color: rgba(180, 180, 210, 0.7);
+            min-width: 50px;
+            text-align: center;
+            transition: color 0.4s ease;
+        }
+
+        .phase-label.sync {
+            color: rgba(180, 220, 180, 0.9);
+            text-shadow: 0 0 12px rgba(140, 200, 140, 0.5);
+        }
+        .phase-label.chaos {
+            color: rgba(220, 160, 140, 0.9);
+            text-shadow: 0 0 12px rgba(200, 120, 80, 0.5);
+        }
+
+        @media (max-width: 600px) {
+            canvas {
+                border-radius: 12px;
+                max-width: 98vw;
+                max-height: 60vh;
+            }
+            .info {
+                font-size: 10px;
+                gap: 10px;
+            }
+            .progress-bar {
+                width: 70px;
+            }
+            .phase-label {
+                font-size: 9px;
+                min-width: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="canvas" aria-label="Harmonic spring wave simulation - 10 second loop"></canvas>
+        <div class="info">
+            <span>⏱ 10s Loop</span>
+            <div class="cycle-indicator">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <span class="phase-label sync" id="phaseLabel">SYNC</span>
+            </div>
+            <span id="timeDisplay">0.0s</span>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const progressFill = document.getElementById('progressFill');
+            const phaseLabel = document.getElementById('phaseLabel');
+            const timeDisplay = document.getElementById('timeDisplay');
+
+            // --- Configuration ---
+            const LOOP_DURATION = 10; // seconds
+            const NUM_MASSES = 27;
+            const BASE_FREQ = 2.0; // Hz - center mass frequency
+            const FREQ_SPACING = 0.1; // Hz between adjacent masses
+            const COUPLING_RATIO = 0.12; // coupling strength relative to avg spring constant
+            const INITIAL_DISPLACEMENT = 65; // pixels
+            const PHYSICS_DT = 1 / 180; // physics timestep (small for accuracy)
+
+            // Derived
+            const CENTER_INDEX = Math.floor(NUM_MASSES / 2);
+            const frequencies = [];
+            const springConstants = [];
+            let avgSpringConstant = 0;
+
+            for (let i = 0; i < NUM_MASSES; i++) {
+                const freq = BASE_FREQ + (i - CENTER_INDEX) * FREQ_SPACING;
+                frequencies.push(freq);
+                const omega = 2 * Math.PI * freq;
+                const k = omega * omega; // m=1
+                springConstants.push(k);
+                avgSpringConstant += k;
+            }
+            avgSpringConstant /= NUM_MASSES;
+            const couplingConstant = avgSpringConstant * COUPLING_RATIO;
+
+            // --- State ---
+            // y = vertical displacement from equilibrium (pixels)
+            // v = velocity (pixels/second)
+            let y = new Float64Array(NUM_MASSES);
+            let v = new Float64Array(NUM_MASSES);
+            let simTime = 0; // wraps at LOOP_DURATION
+            let lastWallTime = null;
+
+            function resetState() {
+                for (let i = 0; i < NUM_MASSES; i++) {
+                    y[i] = INITIAL_DISPLACEMENT;
+                    v[i] = 0;
+                }
+                simTime = 0;
+            }
+
+            resetState();
+
+            // --- Physics (Velocity Verlet) ---
+            function computeAccelerations(yArr, accOut) {
+                for (let i = 0; i < NUM_MASSES; i++) {
+                    // Natural spring force: -k_i * y_i
+                    let force = -springConstants[i] * yArr[i];
+
+                    // Coupling to left neighbor
+                    if (i > 0) {
+                        force -= couplingConstant * (yArr[i] - yArr[i - 1]);
+                    }
+                    // Coupling to right neighbor
+                    if (i < NUM_MASSES - 1) {
+                        force -= couplingConstant * (yArr[i] - yArr[i + 1]);
+                    }
+
+                    accOut[i] = force; // mass = 1
+                }
+            }
+
+            function physicsStep(dt) {
+                const a0 = new Float64Array(NUM_MASSES);
+                computeAccelerations(y, a0);
+
+                // Half-step velocity
+                const vHalf = new Float64Array(NUM_MASSES);
+                for (let i = 0; i < NUM_MASSES; i++) {
+                    vHalf[i] = v[i] + 0.5 * dt * a0[i];
+                }
+
+                // Full-step position
+                const yNew = new Float64Array(NUM_MASSES);
+                for (let i = 0; i < NUM_MASSES; i++) {
+                    yNew[i] = y[i] + dt * vHalf[i];
+                }
+
+                // New accelerations at updated positions
+                const a1 = new Float64Array(NUM_MASSES);
+                computeAccelerations(yNew, a1);
+
+                // Full-step velocity
+                for (let i = 0; i < NUM_MASSES; i++) {
+                    v[i] = vHalf[i] + 0.5 * dt * a1[i];
+                }
+
+                // Update positions
+                y = yNew;
+            }
+
+            function advancePhysics(targetTime) {
+                while (simTime < targetTime) {
+                    const remaining = targetTime - simTime;
+                    const dt = Math.min(PHYSICS_DT, remaining);
+                    physicsStep(dt);
+                    simTime += dt;
+                }
+
+                // Handle wrap
+                if (simTime >= LOOP_DURATION - 1e-9) {
+                    resetState();
+                    // Advance any remainder into the new cycle
+                    const remainder = simTime - LOOP_DURATION;
+                    if (remainder > 1e-9) {
+                        simTime = 0;
+                        advancePhysics(remainder);
+                    } else {
+                        simTime = 0;
+                    }
+                }
+            }
+
+            // --- Rendering ---
+            function resizeCanvas() {
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                const maxWidth = Math.min(window.innerWidth * 0.94, 1000);
+                const maxHeight = Math.min(window.innerHeight * 0.7, 560);
+                const aspectRatio = 16 / 9;
+
+                let w, h;
+                if (maxWidth / maxHeight > aspectRatio) {
+                    h = maxHeight;
+                    w = h * aspectRatio;
+                } else {
+                    w = maxWidth;
+                    h = w / aspectRatio;
+                }
+
+                canvas.width = Math.floor(w * dpr);
+                canvas.height = Math.floor(h * dpr);
+                canvas.style.width = `${Math.floor(w)}px`;
+                canvas.style.height = `${Math.floor(h)}px`;
+            }
+
+            function getLayout() {
+                const w = canvas.width;
+                const h = canvas.height;
+                const paddingX = w * 0.06;
+                const paddingY = h * 0.22;
+                const eqY = h / 2;
+                const spacing = (w - 2 * paddingX) / (NUM_MASSES - 1);
+                const massRadius = Math.max(4, Math.min(12, spacing * 0.3));
+                return { w, h, paddingX, paddingY, eqY, spacing, massRadius };
+            }
+
+            function drawGlow(cx, cy, radius, color, intensity) {
+                const gradient = ctx.createRadialGradient(cx, cy, radius * 0.15, cx, cy, radius * 2.2);
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(0.3, color.replace('1)', `${0.7})`).replace('rgb',
+                    'rgba').replace(')', ', 0.7)').replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/,
+                    'rgba($1, $2, $3, 0.7)'));
+                gradient.addColorStop(0.6, color.replace('1)', `${0.15})`).replace('rgb',
+                    'rgba').replace(')', ', 0.15)').replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/,
+                    'rgba($1, $2, $3, 0.15)'));
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius * 2.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            function getMassColor(index, energy) {
+                const t = index / (NUM_MASSES - 1);
+                const hue = 220 + t * 140; // 220 (blue) -> 360 (red) through purple, magenta, orange
+                const saturation = 75 + energy * 25;
+                const lightness = 50 + energy * 30;
+                return {
+                    hsl: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
+                    hue,
+                    saturation,
+                    lightness,
+                    energy
+                };
+            }
+
+            function render(cycleProgress) {
+                const { w, h, paddingX, eqY, spacing, massRadius } = getLayout();
+                ctx.clearRect(0, 0, w, h);
+
+                // --- Background subtle grid ---
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.015)';
+                ctx.lineWidth = 1;
+                const gridSpacing = 40;
+                for (let gx = gridSpacing; gx < w; gx += gridSpacing) {
+                    ctx.beginPath();
+                    ctx.moveTo(gx, 0);
+                    ctx.lineTo(gx, h);
+                    ctx.stroke();
+                }
+                for (let gy = gridSpacing; gy < h; gy += gridSpacing) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, gy);
+                    ctx.lineTo(w, gy);
+                    ctx.stroke();
+                }
+
+                // --- Equilibrium line ---
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 16]);
+                ctx.beginPath();
+                ctx.moveTo(paddingX - 10, eqY);
+                ctx.lineTo(w - paddingX + 10, eqY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // --- Compute mass positions and energies ---
+                const positions = [];
+                let maxAbsY = 1;
+                for (let i = 0; i < NUM_MASSES; i++) {
+                    const px = paddingX + i * spacing;
+                    const py = eqY + y[i];
+                    positions.push({ x: px, y: py, displacement: y[i] });
+                    if (Math.abs(y[i]) > maxAbsY) maxAbsY = Math.abs(y[i]);
+                }
+
+                // --- Draw spring connections ---
+                for (let i = 0; i < NUM_MASSES - 1; i++) {
+                    const p0 = positions[i];
+                    const p1 = positions[i + 1];
+                    const stretch = Math.abs(p0.displacement - p1.displacement);
+                    const stretchNorm = Math.min(1, stretch / (INITIAL_DISPLACEMENT * 1.5));
+                    const alpha = 0.2 + stretchNorm * 0.55;
+                    const hue = 240 + (i / (NUM_MASSES - 1)) * 130;
+                    const sat = 40 + stretchNorm * 60;
+                    const light = 40 + stretchNorm * 35;
+
+                    ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${light}%, ${alpha})`;
+                    ctx.lineWidth = 1.0 + stretchNorm * 2.5;
+                    ctx.shadowColor = `hsla(${hue}, ${sat}%, ${light}%, ${alpha * 0.6})`;
+                    ctx.shadowBlur = 4 + stretchNorm * 10;
+                    ctx.beginPath();
+                    ctx.moveTo(p0.x, p0.y);
+                    ctx.lineTo(p1.x, p1.y);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+
+                // --- Draw masses ---
+                for (let i = 0; i < NUM_MASSES; i++) {
+                    const p = positions[i];
+                    const energyNorm = Math.min(1, Math.abs(p.displacement) / (maxAbsY + 0.001));
+                    const colorInfo = getMassColor(i, energyNorm);
+
+                    // Outer glow
+                    drawGlow(p.x, p.y, massRadius,
+                        `rgb(${Math.round(180 + colorInfo.hue * 0.3)}, ${Math.round(100 + colorInfo.saturation * 0.5)}, ${Math.round(160 + colorInfo.lightness * 0.6)})`,
+                        energyNorm);
+
+                    // Inner bright core
+                    const coreGradient = ctx.createRadialGradient(p.x - massRadius * 0.2, p.y - massRadius * 0.25,
+                        massRadius * 0.08, p.x, p.y, massRadius);
+                    const r = Math.round(240 + energyNorm * 15);
+                    const g = Math.round(180 + energyNorm * 55);
+                    const b = Math.round(220 - energyNorm * 40);
+                    coreGradient.addColorStop(0, `rgb(${Math.min(255, r + 15)}, ${Math.min(255, g + 20)}, ${Math.min(255, b + 30)})`);
+                    coreGradient.addColorStop(0.5, `rgb(${r}, ${g}, ${b})`);
+                    coreGradient.addColorStop(1, `rgba(${Math.max(0, r - 60)}, ${Math.max(0, g - 50)}, ${Math.max(0, b - 30)}, 0.6)`);
+
+                    ctx.fillStyle = coreGradient;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, massRadius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Specular highlight
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                    ctx.beginPath();
+                    ctx.arc(p.x - massRadius * 0.28, p.y - massRadius * 0.3, massRadius * 0.22, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // --- Subtle cycle marker dots at top ---
+                const dotY = h * 0.06;
+                const dotSpacing = (w - 2 * paddingX) / 10;
+                for (let d = 0; d <= 10; d++) {
+                    const dx = paddingX + d * dotSpacing;
+                    const distToProgress = Math.abs(d / 10 - cycleProgress);
+                    const dotAlpha = distToProgress < 0.04 ? 0.9 : 0.15;
+                    const dotR = distToProgress < 0.04 ? 3.5 : 1.5;
+                    ctx.fillStyle = `rgba(200, 200, 240, ${dotAlpha})`;
+                    ctx.beginPath();
+                    ctx.arc(dx, dotY, dotR, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // --- Highlight the current progress dot ---
+                const progX = paddingX + cycleProgress * (w - 2 * paddingX);
+                ctx.fillStyle = 'rgba(220, 210, 255, 0.95)';
+                ctx.shadowColor = 'rgba(180, 160, 240, 0.7)';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.arc(progX, dotY, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            // --- Animation Loop ---
+            function animate(timestamp) {
+                if (lastWallTime === null) {
+                    lastWallTime = timestamp;
+                }
+
+                let rawDt = (timestamp - lastWallTime) / 1000;
+                lastWallTime = timestamp;
+
+                // Clamp dt to avoid large jumps
+                rawDt = Math.min(rawDt, 0.1);
+                if (rawDt <= 0) rawDt = PHYSICS_DT;
+
+                // Advance physics
+                const targetTime = simTime + rawDt;
+                advancePhysics(targetTime);
+
+                // Handle wrap detection for smooth display
+                const currentCycleTime = simTime;
+                const cycleProgress = currentCycleTime / LOOP_DURATION;
+
+                // Update UI
+                progressFill.style.width = `${cycleProgress * 100}%`;
+                timeDisplay.textContent = `${currentCycleTime.toFixed(1)}s`;
+
+                // Determine phase label
+                const distFromSync = Math.min(cycleProgress, 1 - cycleProgress);
+                if (distFromSync < 0.08) {
+                    phaseLabel.textContent = 'SYNC';
+                    phaseLabel.className = 'phase-label sync';
+                } else if (distFromSync > 0.35) {
+                    phaseLabel.textContent = 'CHAOS';
+                    phaseLabel.className = 'phase-label chaos';
+                } else if (distFromSync < 0.2) {
+                    phaseLabel.textContent = 'DRIFT';
+                    phaseLabel.className = 'phase-label';
+                } else {
+                    phaseLabel.textContent = 'WAVE';
+                    phaseLabel.className = 'phase-label';
+                }
+
+                // Render
+                render(cycleProgress);
+
+                requestAnimationFrame(animate);
+            }
+
+            // --- Handle resize ---
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(resizeCanvas, 150);
+            });
+
+            // --- Handle visibility ---
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    lastWallTime = null;
+                }
+            });
+
+            // --- Initialize ---
+            resizeCanvas();
+            resetState();
+            lastWallTime = null;
+            requestAnimationFrame(animate);
+
+            console.log('%c🌊 Harmonic Spring Wave %cReady',
+                'font-size:16px;color:#a78bfa;', 'color:#ccc;');
+            console.log(`%c   ${NUM_MASSES} masses • ${LOOP_DURATION}s seamless loop • ${BASE_FREQ}Hz center frequency`,
+                'color:#888;');
+            console.log('%c   Frequencies: %c' +
+                frequencies.map(f => f.toFixed(1) + 'Hz').join(', '),
+                'color:#888;', 'color:#666;font-size:10px;');
+            console.log('%c   Watch: Sync → Drift → Chaos → Return → Loop 🔁', 'color:#a78bfa;');
+        })();
+    </script>
+</body>
+</html>

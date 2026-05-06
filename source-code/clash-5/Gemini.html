@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deterministic Beating Heart Loop</title>
+    
+    <!-- p5.js and CCapture.js libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+    <script src="https://unpkg.com/ccapture.js@1.0.9/build/CCapture.all.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0a0a0a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #ui-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            background-color: #e74c3c;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #c0392b;
+        }
+
+        button:disabled {
+            background-color: #555;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        #status {
+            margin-top: 10px;
+            font-size: 14px;
+            display: block;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-container">
+        <button id="recordBtn" onclick="startRecording()">Record 10s Loop (600 Frames)</button>
+        <span id="status">Ready</span>
+    </div>
+
+    <script>
+        // CCapture setup (webm format is bundled in CCapture.all.min.js)
+        const capturer = new CCapture({ format: 'webm', framerate: 60 });
+        
+        let isRecording = false;
+        let framesRecorded = 0;
+        const TOTAL_FRAMES = 600; // 10 seconds at 60 FPS
+
+        function setup() {
+            createCanvas(800, 800);
+            frameRate(60); // Enforce strict 60 FPS
+            colorMode(HSB, 360, 100, 100, 1);
+            noStroke();
+        }
+
+        function draw() {
+            background(0, 0, 5); // Very dark gray
+
+            translate(width / 2, height / 2);
+
+            // -- DETERMINISTIC TIMING --
+            // Global progress loops 0.0 -> 1.0 exactly over 600 frames (10 seconds)
+            let globalT = (frameCount % TOTAL_FRAMES) / TOTAL_FRAMES; 
+            
+            // Local beat progress loops 0.0 -> 1.0 exactly over 60 frames (1 second, 1 beat)
+            let beatT = (frameCount % 60) / 60.0;
+
+            // -- HEARTBEAT MATH (Lub-Dub effect) --
+            // Using Gaussian/Exponential curves for sharp, organic thumps
+            let lub = exp(-pow((beatT - 0.1) * 10, 2));         // 1st thump peaks at 10% of the beat
+            let dub = exp(-pow((beatT - 0.3) * 10, 2)) * 0.6;   // 2nd thump peaks at 30% of the beat, slightly weaker
+            let thump = lub + dub;
+
+            // -- SHAPE & SCALE --
+            let baseScale = 12;
+            let scaleMult = baseScale + thump * 3.5;
+
+            // -- COLOR SHIFT --
+            // Hue shifts slightly over the full 10-second loop using a sine wave, perfectly returning to start
+            let h = 350 + sin(globalT * TWO_PI) * 20; 
+            let s = 80 + thump * 20; // Saturation spikes on the beat
+            let b = 70 + thump * 30; // Brightness spikes on the beat
+
+            // Aesthetic glows
+            drawingContext.shadowBlur = 40 + thump * 40;
+            drawingContext.shadowColor = color(h % 360, s, b).toString();
+
+            fill(h % 360, s, b);
+            stroke(0, 0, 100, 0.4);
+            strokeWeight(2);
+
+            // -- DRAW HEART --
+            // Using standard parametric equations for a heart shape
+            beginShape();
+            for (let a = 0; a < TWO_PI; a += 0.05) {
+                let x = 16 * pow(sin(a), 3);
+                let y = -(13 * cos(a) - 5 * cos(2 * a) - 2 * cos(3 * a) - cos(4 * a));
+                vertex(x * scaleMult, y * scaleMult);
+            }
+            endShape(CLOSE);
+
+            // Reset shadow to prevent bleeding into other drawings if added later
+            drawingContext.shadowBlur = 0;
+
+            // -- CCAPTURE LOGIC --
+            if (isRecording) {
+                capturer.capture(document.getElementById('defaultCanvas0'));
+                framesRecorded++;
+                
+                document.getElementById('status').innerText = `Recording: ${framesRecorded} / ${TOTAL_FRAMES}`;
+
+                // Stop deterministically at frame 600
+                if (framesRecorded >= TOTAL_FRAMES) {
+                    capturer.stop();
+                    capturer.save();
+                    
+                    isRecording = false;
+                    framesRecorded = 0;
+                    
+                    document.getElementById('recordBtn').disabled = false;
+                    document.getElementById('status').innerText = "Processing video file...";
+                    
+                    // Clear status after an arbitrary time (doesn't affect render determinism)
+                    setTimeout(() => {
+                        document.getElementById('status').innerText = "Ready";
+                    }, 4000);
+                }
+            }
+        }
+
+        function startRecording() {
+            if (isRecording) return;
+            isRecording = true;
+            framesRecorded = 0;
+            capturer.start();
+            
+            document.getElementById('recordBtn').disabled = true;
+            document.getElementById('status').innerText = "Starting capture...";
+        }
+    </script>
+</body>
+</html>

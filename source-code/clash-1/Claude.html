@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Newton's Cradle</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0d1117;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Courier New', Courier, monospace;
+  }
+
+  canvas {
+    display: block;
+    position: fixed;
+    top: 0; left: 0;
+  }
+
+  .ui-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 40px;
+  }
+
+  .title-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    animation: fadeUp 1.2s 0.4s ease forwards;
+  }
+
+  .title {
+    font-size: clamp(13px, 1.5vw, 16px);
+    letter-spacing: 0.35em;
+    color: rgba(160, 178, 210, 0.55);
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  .subtitle {
+    font-size: clamp(10px, 1vw, 11px);
+    letter-spacing: 0.2em;
+    color: rgba(120, 140, 175, 0.3);
+    text-transform: uppercase;
+  }
+
+  .footer-block {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    opacity: 0;
+    animation: fadeUp 1.2s 0.8s ease forwards;
+    pointer-events: all;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: default;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    color: rgba(120, 140, 175, 0.35);
+    text-transform: uppercase;
+  }
+
+  .stat-value {
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    color: rgba(160, 185, 220, 0.5);
+  }
+
+  .divider {
+    width: 1px;
+    height: 28px;
+    background: rgba(120, 140, 175, 0.15);
+  }
+
+  .btn {
+    pointer-events: all;
+    background: rgba(160, 185, 220, 0.06);
+    border: 1px solid rgba(160, 185, 220, 0.18);
+    border-radius: 3px;
+    padding: 7px 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: rgba(160, 185, 220, 0.5);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.25s, color 0.25s, border-color 0.25s;
+  }
+
+  .btn:hover {
+    background: rgba(160, 185, 220, 0.12);
+    border-color: rgba(160, 185, 220, 0.4);
+    color: rgba(190, 210, 240, 0.8);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div class="ui-overlay">
+  <div class="title-block">
+    <div class="title">Newton's Cradle</div>
+    <div class="subtitle">Conservation of Momentum &amp; Energy</div>
+  </div>
+  <div class="footer-block">
+    <div class="stat">
+      <div class="stat-label">Spheres</div>
+      <div class="stat-value" id="s-balls">5</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat">
+      <div class="stat-label">Restitution</div>
+      <div class="stat-value">1.000</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat">
+      <div class="stat-label">Pull Angle</div>
+      <div class="stat-value">45°</div>
+    </div>
+    <div class="divider"></div>
+    <button class="btn" id="btn-reset">↺ Reset</button>
+    <div class="divider"></div>
+    <button class="btn" id="btn-two">2 Balls</button>
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────────────────────────────────────
+   Newton's Cradle — Matter.js + Canvas
+   ───────────────────────────────────────────────────────────────────────────── */
+
+const { Engine, Bodies, Body, Constraint, Composite, Events, Runner } = Matter;
+
+const canvas  = document.getElementById('c');
+const ctx     = canvas.getContext('2d');
+
+let W, H;
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', () => { resize(); buildCradle(numActive); });
+
+// ── Engine ────────────────────────────────────────────────────────────────────
+let engine, runner;
+let balls = [], constraints = [];
+let trailMap = new Map(); // ball → [position history]
+let numActive = 1;        // how many balls to pull back
+
+const N          = 5;
+const R          = Math.max(18, Math.min(28, W * 0.028)); // responsive radius
+const SEP        = R * 2 + 0.4;   // tiny gap prevents sticky contacts
+const STR_LEN    = Math.min(H * 0.3, 220);
+const PULL_ANGLE = Math.PI / 4;   // 45°
+const TRAIL_LEN  = 18;
+
+function makeEngine() {
+  if (runner) Runner.stop(runner);
+  engine = Engine.create({
+    gravity: { x: 0, y: 1.8 },
+    positionIterations: 12,
+    velocityIterations: 12,
+    constraintIterations: 8
+  });
+  runner = Runner.create({ delta: 1000 / 60 });
+}
+
+// ── Build / Rebuild Cradle ────────────────────────────────────────────────────
+function buildCradle(activeBalls) {
+  numActive = activeBalls;
+  trailMap.clear();
+
+  makeEngine();
+
+  const cx      = W / 2;
+  const anchorY = H / 2 - STR_LEN * 0.45;
+  const restY   = anchorY + STR_LEN;
+
+  balls       = [];
+  constraints = [];
+
+  for (let i = 0; i < N; i++) {
+    const bx = cx + (i - (N - 1) / 2) * SEP;
+
+    const ball = Bodies.circle(bx, restY, R, {
+      restitution:   1.00,
+      friction:      0.00,
+      frictionAir:   0.0008,
+      frictionStatic:0.00,
+      slop:          0.001,
+      density:       0.04,
+      label:         'ball'
+    });
+
+    // One constraint per ball (inextensible pendulum rod)
+    // Attaches at top surface of ball (pointB local = {0, -R})
+    const con = Constraint.create({
+      pointA:  { x: bx, y: anchorY },
+      bodyB:   ball,
+      pointB:  { x: 0, y: -R },
+      length:  STR_LEN - R,
+      stiffness: 1.0,
+      damping:   0
+    });
+
+    balls.push(ball);
+    constraints.push(con);
+    trailMap.set(ball, []);
+  }
+
+  Composite.add(engine.world, [...balls, ...constraints]);
+
+  // Pull the leftmost `numActive` balls back to 45°
+  for (let i = 0; i < numActive; i++) {
+    const ball   = balls[i];
+    const pivotX = cx + (i - (N - 1) / 2) * SEP;
+    Body.setPosition(ball, {
+      x: pivotX - STR_LEN * Math.sin(PULL_ANGLE),
+      y: anchorY + STR_LEN * Math.cos(PULL_ANGLE)
+    });
+    Body.setVelocity(ball, { x: 0, y: 0 });
+    Body.setAngularVelocity(ball, 0);
+  }
+
+  // Store geometry for rendering
+  engine._cradle = { cx, anchorY, restY };
+
+  Runner.run(runner, engine);
+}
+
+// ── Gradient helpers (created lazily, invalidated on resize) ──────────────────
+function metalGrad(x, y, r) {
+  const g = ctx.createRadialGradient(
+    x - r * 0.38, y - r * 0.40, r * 0.05,
+    x + r * 0.08, y + r * 0.12, r * 1.08
+  );
+  g.addColorStop(0.00, '#f2f4f6');
+  g.addColorStop(0.18, '#d8dde5');
+  g.addColorStop(0.45, '#98a4b2');
+  g.addColorStop(0.72, '#5a6472');
+  g.addColorStop(0.90, '#343d49');
+  g.addColorStop(1.00, '#1e2530');
+  return g;
+}
+
+function barGrad(x, y1, y2) {
+  const g = ctx.createLinearGradient(x, y1, x, y2);
+  g.addColorStop(0.00, '#252e3d');
+  g.addColorStop(0.30, '#64738a');
+  g.addColorStop(0.55, '#96a8bc');
+  g.addColorStop(0.78, '#64738a');
+  g.addColorStop(1.00, '#252e3d');
+  return g;
+}
+
+// ── Draw ──────────────────────────────────────────────────────────────────────
+function draw() {
+  if (!engine) return;
+  const { cx, anchorY } = engine._cradle;
+
+  // Update trails
+  for (const ball of balls) {
+    const hist = trailMap.get(ball);
+    hist.push({ x: ball.position.x, y: ball.position.y });
+    if (hist.length > TRAIL_LEN) hist.shift();
+  }
+
+  // ── Background ──
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  // Ambient center glow
+  const glow = ctx.createRadialGradient(cx, H * 0.46, 0, cx, H * 0.46, W * 0.38);
+  glow.addColorStop(0, 'rgba(35, 55, 95, 0.22)');
+  glow.addColorStop(1, 'rgba(13, 17, 23, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Frame ──
+  const fw       = SEP * (N - 1) + R * 2 + 54;
+  const fLeft    = cx - fw / 2;
+  const fRight   = cx + fw / 2;
+  const barH     = 13;
+  const legH     = 52;
+  const legW     = 9;
+  const topBarY  = anchorY - 10;
+
+  // Vertical legs
+  const legGrad = barGrad(0, topBarY - legH, topBarY);
+  ctx.fillStyle = legGrad;
+
+  for (const lx of [fLeft + 18, fRight - 18 - legW]) {
+    ctx.beginPath();
+    ctx.roundRect(lx, topBarY - legH, legW, legH, [3, 3, 0, 0]);
+    ctx.fill();
+  }
+
+  // Foot pads
+  ctx.fillStyle = 'rgba(80, 95, 115, 0.35)';
+  for (const lx of [fLeft + 8, fRight - 28]) {
+    ctx.beginPath();
+    ctx.roundRect(lx, topBarY - legH - 4, 30, 5, 2);
+    ctx.fill();
+  }
+
+  // Top cross-bar
+  ctx.fillStyle = barGrad(cx, topBarY - legH - barH, topBarY - legH + barH * 0.5);
+  ctx.beginPath();
+  ctx.roundRect(fLeft, topBarY - legH - barH * 0.55, fRight - fLeft, barH, 4);
+  ctx.fill();
+
+  // Subtle top-bar edge highlight
+  ctx.strokeStyle = 'rgba(180, 200, 220, 0.08)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(fLeft, topBarY - legH - barH * 0.55, fRight - fLeft, barH, 4);
+  ctx.stroke();
+
+  // Bottom cross-bar (where strings attach)
+  ctx.fillStyle = barGrad(cx, topBarY - barH, topBarY + barH * 0.5);
+  ctx.beginPath();
+  ctx.roundRect(fLeft, topBarY - barH * 0.5, fRight - fLeft, barH, 3);
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(180, 200, 220, 0.06)';
+  ctx.beginPath();
+  ctx.roundRect(fLeft, topBarY - barH * 0.5, fRight - fLeft, barH, 3);
+  ctx.stroke();
+
+  // ── Strings ──
+  const spreadX = R * 0.62;
+
+  for (let i = 0; i < balls.length; i++) {
+    const ball   = balls[i];
+    const bx     = ball.position.x;
+    const by     = ball.position.y;
+    const pivotX = cx + (i - (N - 1) / 2) * SEP;
+
+    // Approximate where strings meet the ball surface
+    const attachL = { x: bx - spreadX * 0.45, y: by - R * 0.82 };
+    const attachR = { x: bx + spreadX * 0.45, y: by - R * 0.82 };
+
+    // Shadow
+    ctx.strokeStyle = 'rgba(0,0,0,0.28)';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(pivotX - spreadX + 1, anchorY + 1);
+    ctx.lineTo(attachL.x + 1, attachL.y + 1);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pivotX + spreadX + 1, anchorY + 1);
+    ctx.lineTo(attachR.x + 1, attachR.y + 1);
+    ctx.stroke();
+
+    // Actual strings
+    ctx.strokeStyle = 'rgba(190, 205, 225, 0.68)';
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(pivotX - spreadX, anchorY);
+    ctx.lineTo(attachL.x, attachL.y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(pivotX + spreadX, anchorY);
+    ctx.lineTo(attachR.x, attachR.y);
+    ctx.stroke();
+  }
+
+  // ── Trails ──
+  for (const ball of balls) {
+    const hist = trailMap.get(ball);
+    if (hist.length < 3) continue;
+
+    const spd = Math.hypot(ball.velocity.x, ball.velocity.y);
+    if (spd < 0.5) continue;
+
+    for (let t = 1; t < hist.length; t++) {
+      const alpha = (t / hist.length) * 0.22 * Math.min(spd / 8, 1);
+      const r     = R * (t / hist.length) * 0.72;
+      ctx.beginPath();
+      ctx.arc(hist[t].x, hist[t].y, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(140, 165, 200, ${alpha.toFixed(3)})`;
+      ctx.fill();
+    }
+  }
+
+  // ── Balls ──
+  for (const ball of balls) {
+    const bx = ball.position.x;
+    const by = ball.position.y;
+
+    // Cast shadow (ellipse below ball)
+    ctx.save();
+    ctx.translate(bx, by + R + 18);
+    ctx.scale(1, 0.28);
+    const sh = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 1.15);
+    sh.addColorStop(0, 'rgba(0,0,0,0.55)');
+    sh.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = sh;
+    ctx.beginPath();
+    ctx.arc(0, 0, R * 1.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Clip to circle
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(bx, by, R, 0, Math.PI * 2);
+    ctx.clip();
+
+    // Base metallic gradient
+    ctx.fillStyle = metalGrad(bx, by, R);
+    ctx.fillRect(bx - R, by - R, R * 2, R * 2);
+
+    // Primary specular highlight (top-left)
+    const sp1 = ctx.createRadialGradient(
+      bx - R * 0.3, by - R * 0.32, 0,
+      bx - R * 0.3, by - R * 0.32, R * 0.58
+    );
+    sp1.addColorStop(0.00, 'rgba(255,255,255,0.80)');
+    sp1.addColorStop(0.40, 'rgba(255,255,255,0.18)');
+    sp1.addColorStop(1.00, 'rgba(255,255,255,0.00)');
+    ctx.fillStyle = sp1;
+    ctx.fillRect(bx - R, by - R, R * 2, R * 2);
+
+    // Secondary rim reflection (bottom-right edge)
+    const sp2 = ctx.createRadialGradient(
+      bx + R * 0.38, by + R * 0.52, 0,
+      bx + R * 0.38, by + R * 0.52, R * 0.48
+    );
+    sp2.addColorStop(0.00, 'rgba(255,255,255,0.22)');
+    sp2.addColorStop(1.00, 'rgba(255,255,255,0.00)');
+    ctx.fillStyle = sp2;
+    ctx.fillRect(bx - R, by - R, R * 2, R * 2);
+
+    // Environment reflection band (subtle horizontal band across equator)
+    const envGrad = ctx.createLinearGradient(bx - R, by - R * 0.08, bx - R, by + R * 0.25);
+    envGrad.addColorStop(0, 'rgba(200, 215, 235, 0.00)');
+    envGrad.addColorStop(0.5,'rgba(200, 215, 235, 0.09)');
+    envGrad.addColorStop(1, 'rgba(200, 215, 235, 0.00)');
+    ctx.fillStyle = envGrad;
+    ctx.fillRect(bx - R, by - R, R * 2, R * 2);
+
+    ctx.restore();
+
+    // Outer rim ring (drawn AFTER clip restore so it sits on top cleanly)
+    ctx.beginPath();
+    ctx.arc(bx, by, R - 0.5, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Inner dark ring (gives depth / edge definition)
+    ctx.beginPath();
+    ctx.arc(bx, by, R * 0.82, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+}
+
+// ── Animation loop ─────────────────────────────────────────────────────────────
+let lastT = 0;
+
+function loop(t) {
+  requestAnimationFrame(loop);
+  draw();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+buildCradle(1);
+requestAnimationFrame(loop);
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+document.getElementById('btn-reset').addEventListener('click', () => {
+  buildCradle(numActive);
+});
+
+const btnTwo = document.getElementById('btn-two');
+let twoMode  = false;
+btnTwo.addEventListener('click', () => {
+  twoMode    = !twoMode;
+  numActive  = twoMode ? 2 : 1;
+  btnTwo.textContent = twoMode ? '1 Ball' : '2 Balls';
+  buildCradle(numActive);
+});
+</script>
+</body>
+</html>

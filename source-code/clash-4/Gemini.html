@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmonic Spring Wave</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #info {
+            position: absolute;
+            top: 30px;
+            text-align: center;
+            z-index: 10;
+        }
+        h1 { margin: 0 0 5px 0; font-size: 1.5rem; letter-spacing: 1px; }
+        p { margin: 0; color: #94a3b8; font-variant-numeric: tabular-nums; }
+        canvas {
+            background-color: #1e293b;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="info">
+        <h1>Harmonic Spring Wave</h1>
+        <p>Loop Time: <strong id="timer" style="color: #38bdf8;">0.00</strong> / 10.00s</p>
+    </div>
+
+    <canvas id="canvas" width="900" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const timerDisplay = document.getElementById('timer');
+
+        // Core Physics Parameters
+        const LOOP_TIME = 10;           // Seconds for a perfect loop realignment
+        const NUM_MASSES = 24;          // Total number of springs/masses
+        const BASE_CYCLES = 15;         // The slowest mass completes 15 cycles per 10s
+        const AMPLITUDE = 180;          // Vertical travel distance
+        const ANCHOR_Y = 50;            // Top mounting point
+        const REST_Y = canvas.height / 2 + 30; // Middle equilibrium point
+
+        let startTime = null;
+
+        // Draw a zigzag spring to connect the anchor and the mass
+        function drawSpring(x, startY, endY) {
+            ctx.beginPath();
+            ctx.moveTo(x, startY);
+            
+            const segments = 20;
+            const segmentHeight = (endY - startY) / segments;
+            const springWidth = 8;
+            
+            for (let i = 1; i < segments; i++) {
+                const px = x + (i % 2 === 0 ? springWidth : -springWidth);
+                const py = startY + i * segmentHeight;
+                ctx.lineTo(px, py);
+            }
+            
+            ctx.lineTo(x, endY);
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        function animate(timestamp) {
+            if (!startTime) startTime = timestamp;
+            
+            // Calculate time in seconds
+            const elapsed = Math.max(0, (timestamp - startTime) / 1000);
+            
+            // Modulo loop time to prevent floating point drift and reset the clock
+            const t = elapsed % LOOP_TIME;
+            
+            // Update UI timer
+            timerDisplay.innerText = t.toFixed(2).padStart(4, '0');
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw top mounting beam
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(20, ANCHOR_Y - 10, canvas.width - 40, 20);
+
+            const spacing = canvas.width / (NUM_MASSES + 1);
+
+            // Iterate through each oscillator
+            for (let i = 0; i < NUM_MASSES; i++) {
+                // Each successive mass does exactly 1 more cycle per 10 seconds
+                const cyclesInLoop = BASE_CYCLES + i;
+                const frequency = cyclesInLoop / LOOP_TIME; 
+                
+                // Calculate position using cosine wave
+                // Starts at max amplitude when t=0 (because cos(0) = 1)
+                const displacement = Math.cos(2 * Math.PI * frequency * t) * AMPLITUDE;
+                
+                const x = spacing * (i + 1);
+                const y = REST_Y + displacement;
+
+                // 1. Draw the spring
+                drawSpring(x, ANCHOR_Y + 10, y);
+
+                // 2. Draw the mass
+                ctx.beginPath();
+                ctx.arc(x, y, 14, 0, Math.PI * 2);
+                
+                // Create a smooth color gradient across the masses
+                const hue = (i / NUM_MASSES) * 280; // Blue to Pink/Red spectrum
+                ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+                ctx.fill();
+                
+                // Add a highlight for 3D effect
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Inner reflection dot
+                ctx.beginPath();
+                ctx.arc(x - 4, y - 4, 3, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fill();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start loop
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>

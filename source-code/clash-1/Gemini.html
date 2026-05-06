@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Fidelity Newton's Cradle</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0d1117; /* Dark professional aesthetic */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+        canvas {
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+            border-radius: 12px;
+            background-color: #0d1117;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            color: #8b949e;
+            font-size: 14px;
+            user-select: none;
+            pointer-events: none;
+        }
+    </style>
+    <!-- Matter.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+</head>
+<body>
+
+    <div id="instructions">You can also use your mouse to interact with the spheres.</div>
+
+    <script>
+        // Module aliases
+        const Engine = Matter.Engine,
+              Runner = Matter.Runner,
+              World = Matter.World,
+              Bodies = Matter.Bodies,
+              Body = Matter.Body,
+              Constraint = Matter.Constraint,
+              Composite = Matter.Composite,
+              Mouse = Matter.Mouse,
+              MouseConstraint = Matter.MouseConstraint;
+
+        // Create a high-precision engine
+        const engine = Engine.create({
+            positionIterations: 15, // Higher iterations for stiffer, more accurate collisions
+            velocityIterations: 15
+        });
+        const world = engine.world;
+
+        // Set up the canvas
+        const width = 800;
+        const height = 600;
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+
+        // Physics parameters
+        const numSpheres = 5;
+        const radius = 25;
+        const stringLength = 250;
+        const startX = width / 2 - (numSpheres * radius);
+        const startY = 120;
+
+        const cradle = Composite.create();
+
+        // Generate the spheres and strings
+        for (let i = 0; i < numSpheres; i++) {
+            const x = startX + (i * radius * 2);
+            const y = startY + stringLength;
+            
+            // Sphere physics properties optimized for perfect momentum transfer
+            const sphere = Bodies.circle(x, y, radius, {
+                restitution: 1.0,      // Perfectly elastic collisions
+                friction: 0,           // No surface friction
+                frictionAir: 0.0001,   // Minimal air resistance
+                slop: 0.0001,          // Prevent bodies from sinking into each other
+                inertia: Infinity,     // Prevent spinning to conserve kinetic energy
+                density: 0.05
+            });
+            
+            const string = Constraint.create({
+                pointA: { x: x, y: startY },
+                bodyB: sphere,
+                pointB: { x: 0, y: 0 },
+                stiffness: 1,          // Rigid string
+                length: stringLength
+            });
+            
+            Composite.add(cradle, [sphere, string]);
+        }
+        World.add(world, cradle);
+
+        // Programmatically pull back the first sphere to a 45-degree angle
+        const firstSphere = cradle.bodies[0];
+        const angle = Math.PI / 4; // 45 degrees in radians
+        
+        // Calculate new position based on anchor point and angle
+        const anchorX = startX;
+        const anchorY = startY;
+        const newX = anchorX - stringLength * Math.sin(angle);
+        const newY = anchorY + stringLength * Math.cos(angle);
+        
+        Body.setPosition(firstSphere, { x: newX, y: newY });
+
+        // Add mouse interaction capability
+        const mouse = Mouse.create(canvas);
+        const mouseConstraint = MouseConstraint.create(engine, {
+            mouse: mouse,
+            constraint: {
+                stiffness: 0.2,
+                render: { visible: false }
+            }
+        });
+        World.add(world, mouseConstraint);
+
+        // Run the engine
+        const runner = Runner.create();
+        Runner.run(runner, engine);
+
+        // Custom Render Loop for high-fidelity graphics (Gradients)
+        function render() {
+            // Clear frame
+            ctx.fillStyle = '#0d1117';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw top suspension bar
+            ctx.fillStyle = '#21262d';
+            const barWidth = (numSpheres + 1) * radius * 2;
+            const barHeight = 16;
+            ctx.fillRect(startX - radius * 2, startY - barHeight/2, barWidth, barHeight);
+            
+            // Add a highlight line to the top bar to make it pop
+            ctx.fillStyle = '#30363d';
+            ctx.fillRect(startX - radius * 2, startY - barHeight/2, barWidth, 3);
+
+            // Draw strings
+            ctx.beginPath();
+            ctx.strokeStyle = '#8b949e';
+            ctx.lineWidth = 1.5;
+            cradle.constraints.forEach(constraint => {
+                const pointA = constraint.pointA;
+                const bodyB = constraint.bodyB;
+                ctx.moveTo(pointA.x, pointA.y);
+                ctx.lineTo(bodyB.position.x, bodyB.position.y);
+            });
+            ctx.stroke();
+
+            // Draw spheres with metallic gradients
+            cradle.bodies.forEach(body => {
+                const x = body.position.x;
+                const y = body.position.y;
+                
+                // Create linear gradient for 3D metallic look
+                const gradient = ctx.createLinearGradient(x - radius, y - radius, x + radius, y + radius);
+                gradient.addColorStop(0, '#e6edf3'); // Bright reflection top-left
+                gradient.addColorStop(0.3, '#8b949e'); // Mid tone
+                gradient.addColorStop(0.8, '#30363d'); // Dark tone
+                gradient.addColorStop(1, '#010409'); // Core shadow bottom-right
+
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                // Add a small, sharp specular highlight
+                ctx.beginPath();
+                ctx.arc(x - radius/2.5, y - radius/2.5, radius/5, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.fill();
+            });
+
+            // Loop
+            requestAnimationFrame(render);
+        }
+        
+        // Start rendering
+        render();
+    </script>
+</body>
+</html>

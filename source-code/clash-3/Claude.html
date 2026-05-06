@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>π Constellation</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+canvas { position: absolute; inset: 0; display: block; }
+
+#overlay {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 28px 36px;
+  z-index: 10;
+}
+
+#title-block { display: flex; flex-direction: column; gap: 4px; }
+
+#title {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 6px;
+  color: rgba(0, 229, 255, 0.45);
+  text-transform: uppercase;
+}
+
+#subtitle {
+  font-family: 'Courier New', monospace;
+  font-size: 26px;
+  color: rgba(0, 229, 255, 0.15);
+  letter-spacing: 2px;
+  font-weight: bold;
+}
+
+#bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+#digit-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+#digit-display {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: rgba(180, 80, 255, 0.7);
+  text-transform: uppercase;
+}
+
+#current-digit {
+  font-family: 'Courier New', monospace;
+  font-size: 20px;
+  color: rgba(0, 229, 255, 0.6);
+  width: 24px;
+  text-align: center;
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.8);
+  transition: color 0.1s;
+}
+
+#progress-bar {
+  width: 240px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: visible;
+}
+
+#progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #00e5ff, #b400ff, #ff0090);
+  box-shadow: 0 0 8px rgba(180, 0, 255, 0.9);
+  transition: width 0.05s linear;
+}
+
+#restart {
+  pointer-events: auto;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: rgba(0, 229, 255, 0.5);
+  background: transparent;
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  padding: 7px 20px;
+  text-transform: uppercase;
+  display: none;
+  margin-top: 4px;
+  transition: color 0.2s, border-color 0.2s;
+}
+#restart:hover { color: #00e5ff; border-color: rgba(0, 229, 255, 0.7); }
+
+#legend {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.15);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+#speed-row {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+.sp-btn {
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: rgba(180, 80, 255, 0.45);
+  background: transparent;
+  border: 1px solid rgba(180, 80, 255, 0.2);
+  padding: 4px 10px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+.sp-btn:hover, .sp-btn.active { color: rgba(180, 80, 255, 0.9); border-color: rgba(180, 80, 255, 0.6); }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+<canvas id="path-canvas"></canvas>
+<canvas id="c"></canvas>
+
+<div id="overlay">
+  <div id="title-block">
+    <div id="title">Pi &nbsp;·&nbsp; Constellation &nbsp;·&nbsp; 1000 digits</div>
+    <div id="subtitle">3.14159…</div>
+  </div>
+
+  <div id="bottom">
+    <div id="digit-row">
+      <div id="digit-display">digit <span id="cnt">0</span> / 1000</div>
+      <div id="current-digit">·</div>
+    </div>
+    <div id="progress-bar"><div id="progress-fill"></div></div>
+    <div id="speed-row">
+      <button class="sp-btn active" onclick="setSpeed(1,this)">1×</button>
+      <button class="sp-btn" onclick="setSpeed(3,this)">3×</button>
+      <button class="sp-btn" onclick="setSpeed(8,this)">8×</button>
+    </div>
+    <button id="restart" onclick="startAnimation()">↺ &nbsp; Restart</button>
+    <div id="legend">each step = 10 px · angle = digit × 36°</div>
+  </div>
+</div>
+
+<script>
+/* ─────────────── Pi digits (first 1000) ─────────────── */
+const PI = "3141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148086513282306647093844609550582231725359408128481117450284102701938521105559644622948954930381964428810975665933446128475648233786783165271201909145648566923460348610454326648213393607260249141273724587006606315588174881520920962829254091715364367892590360011330530548820466521384146951941511609433057270365759591953092186117381932611793105118548074462379962749567351885752724891227938183011949129833673362440656643086021394946395224737190702179860943702770539217176293176752384674818467669405132000568127145263560827785771342757789609173637178721468440901224953430146549585371050792279689258923542019956112129021960864034418159813629774771309960518707211349999998372978049951059731732816096318595024459455346908302642522308253344685035261931188171010003137838752886587533208381420617177669147303598253490428755468731159562863882353787593751957781857780532171226806613001927876611195909216420199";
+
+/* ─────────────── Canvas setup ─────────────── */
+const bgCanvas    = document.getElementById('bg');
+const pathCanvas  = document.getElementById('path-canvas');
+const mainCanvas  = document.getElementById('c');
+const bgCtx   = bgCanvas.getContext('2d');
+const pathCtx = pathCanvas.getContext('2d');
+const ctx     = mainCanvas.getContext('2d');
+
+let W, H;
+function resize() {
+  W = bgCanvas.width = pathCanvas.width = mainCanvas.width = window.innerWidth;
+  H = bgCanvas.height = pathCanvas.height = mainCanvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', () => { resize(); drawBackground(); if (tf) redrawAll(); });
+
+/* ─────────────── Pre-compute 1001 points (logical space, origin = 0,0) ─────────────── */
+const N = 1000;
+const pts = new Float64Array((N + 1) * 2);   // interleaved x,y
+for (let i = 0; i < N; i++) {
+  const d = +PI[i];
+  const ang = d * 36 * Math.PI / 180;
+  pts[(i + 1) * 2]     = pts[i * 2]     + Math.cos(ang) * 10;
+  pts[(i + 1) * 2 + 1] = pts[i * 2 + 1] + Math.sin(ang) * 10;
+}
+
+/* ─────────────── Final bounding box → fixed transform ─────────────── */
+let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+for (let i = 0; i <= N; i++) {
+  const x = pts[i * 2], y = pts[i * 2 + 1];
+  if (x < minX) minX = x;  if (x > maxX) maxX = x;
+  if (y < minY) minY = y;  if (y > maxY) maxY = y;
+}
+
+let tf = null;
+function computeTransform() {
+  const pad = Math.min(W, H) * 0.1;
+  const pw = maxX - minX || 1, ph = maxY - minY || 1;
+  const scale = Math.min((W - pad * 2) / pw, (H - pad * 2) / ph);
+  return {
+    scale,
+    dx: W / 2 - ((minX + maxX) / 2) * scale,
+    dy: H / 2 - ((minY + maxY) / 2) * scale
+  };
+}
+
+function toScreen(i) {
+  return [
+    pts[i * 2]     * tf.scale + tf.dx,
+    pts[i * 2 + 1] * tf.scale + tf.dy
+  ];
+}
+
+/* ─────────────── Color gradient: cyan → indigo → magenta ─────────────── */
+function hue(t)   { return 185 + t * 145; }   // 185 → 330
+function light(t) { return 58  + t * 14;  }   // 58% → 72%
+function getColor(t) { return `hsl(${hue(t)}, 100%, ${light(t)}%)`; }
+
+/* ─────────────── Starfield background ─────────────── */
+function rng(seed) {
+  return function() {
+    seed = (seed ^ (seed << 13)) >>> 0;
+    seed = (seed ^ (seed >>> 17)) >>> 0;
+    seed = (seed ^ (seed <<  5)) >>> 0;
+    return seed / 0xFFFFFFFF;
+  };
+}
+function drawBackground() {
+  bgCtx.fillStyle = '#000008';
+  bgCtx.fillRect(0, 0, W, H);
+  const r = rng(7919);
+  for (let i = 0; i < 280; i++) {
+    const sx = r() * W, sy = r() * H;
+    const sz = r() * 1.3;
+    const sa = 0.06 + r() * 0.28;
+    bgCtx.beginPath();
+    bgCtx.arc(sx, sy, sz, 0, Math.PI * 2);
+    bgCtx.fillStyle = `rgba(255,255,255,${sa.toFixed(2)})`;
+    bgCtx.fill();
+  }
+  // faint origin glow
+  if (tf) {
+    const [ox, oy] = toScreen(0);
+    const gr = bgCtx.createRadialGradient(ox, oy, 0, ox, oy, 80);
+    gr.addColorStop(0, 'rgba(0,229,255,0.07)');
+    gr.addColorStop(1, 'rgba(0,0,0,0)');
+    bgCtx.fillStyle = gr;
+    bgCtx.fillRect(0, 0, W, H);
+  }
+}
+
+/* ─────────────── Draw one segment to an offscreen ctx ─────────────── */
+function drawSegTo(octx, i) {
+  const t     = i / (N - 1);
+  const [x1, y1] = toScreen(i);
+  const [x2, y2] = toScreen(i + 1);
+  const col   = getColor(t);
+  const lw    = Math.max(tf.scale * 0.5, 1);
+
+  // Wide soft halo
+  octx.beginPath();
+  octx.moveTo(x1, y1);
+  octx.lineTo(x2, y2);
+  octx.strokeStyle = col;
+  octx.lineWidth   = lw * 4;
+  octx.shadowColor = col;
+  octx.shadowBlur  = 18;
+  octx.lineCap     = 'round';
+  octx.globalAlpha = 0.28;
+  octx.stroke();
+
+  // Medium inner glow
+  octx.beginPath();
+  octx.moveTo(x1, y1);
+  octx.lineTo(x2, y2);
+  octx.lineWidth  = lw * 1.6;
+  octx.shadowBlur = 7;
+  octx.globalAlpha = 0.7;
+  octx.stroke();
+
+  // Crisp bright core
+  octx.beginPath();
+  octx.moveTo(x1, y1);
+  octx.lineTo(x2, y2);
+  octx.strokeStyle = `hsl(${hue(t)}, 60%, 95%)`;
+  octx.lineWidth   = Math.max(lw * 0.5, 0.6);
+  octx.shadowBlur  = 3;
+  octx.globalAlpha = 0.9;
+  octx.stroke();
+
+  octx.globalAlpha = 1;
+  octx.shadowBlur  = 0;
+}
+
+/* ─────────────── Vertex node dots ─────────────── */
+function drawNode(octx, i) {
+  const t = i / (N - 1);
+  const [x, y] = toScreen(i);
+  const r = Math.max(tf.scale * 0.18, 1.1);
+  const col = getColor(t);
+  octx.beginPath();
+  octx.arc(x, y, r, 0, Math.PI * 2);
+  octx.fillStyle = col;
+  octx.shadowColor = col;
+  octx.shadowBlur = 6;
+  octx.globalAlpha = 0.55;
+  octx.fill();
+  octx.globalAlpha = 1;
+  octx.shadowBlur = 0;
+}
+
+/* ─────────────── Redraw entire revealed path ─────────────── */
+function redrawAll() {
+  tf = computeTransform();
+  pathCtx.clearRect(0, 0, W, H);
+  for (let i = 0; i < revealed; i++) {
+    drawSegTo(pathCtx, i);
+    drawNode(pathCtx, i);
+  }
+  if (revealed > 0) drawNode(pathCtx, revealed);
+}
+
+/* ─────────────── Glowing tip cursor ─────────────── */
+let tipPulse = 0;
+function drawTip(mctx) {
+  if (revealed === 0) return;
+  const t = (revealed - 1) / (N - 1);
+  const [tx, ty] = toScreen(revealed);
+  const col = getColor(t);
+  tipPulse += 0.07;
+  const pulseR = 5 + Math.sin(tipPulse) * 3;
+
+  // Outer ring
+  mctx.beginPath();
+  mctx.arc(tx, ty, pulseR, 0, Math.PI * 2);
+  mctx.strokeStyle = col;
+  mctx.lineWidth = 1;
+  mctx.shadowColor = col;
+  mctx.shadowBlur = 14;
+  mctx.globalAlpha = 0.5 + 0.3 * Math.sin(tipPulse);
+  mctx.stroke();
+
+  // Bright centre dot
+  mctx.beginPath();
+  mctx.arc(tx, ty, 2.2, 0, Math.PI * 2);
+  mctx.fillStyle = '#fff';
+  mctx.shadowColor = col;
+  mctx.shadowBlur = 16;
+  mctx.globalAlpha = 1;
+  mctx.fill();
+
+  mctx.shadowBlur = 0;
+  mctx.globalAlpha = 1;
+}
+
+/* ─────────────── Animation state ─────────────── */
+let revealed   = 0;
+let animId     = null;
+let speedMult  = 1;          // 1× = 10 s, 3× = ~3.3 s, 8× = 1.25 s
+const BASE_DURATION = 10000; // ms for 1× speed
+
+let startTime  = null;       // performance.now() at animation start
+let pausedAt   = null;
+
+function setSpeed(s, btn) {
+  // Recalculate startTime so current revealed position stays in sync
+  if (startTime !== null && revealed < N) {
+    const elapsed   = (performance.now() - startTime) * speedMult;
+    speedMult       = s;
+    startTime       = performance.now() - elapsed / speedMult;
+  } else {
+    speedMult = s;
+  }
+  document.querySelectorAll('.sp-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function startAnimation() {
+  if (animId) cancelAnimationFrame(animId);
+  revealed  = 0;
+  tipPulse  = 0;
+  startTime = null;
+  tf = computeTransform();
+  pathCtx.clearRect(0, 0, W, H);
+  ctx.clearRect(0, 0, W, H);
+  document.getElementById('cnt').textContent = '0';
+  document.getElementById('current-digit').textContent = PI[0];
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('restart').style.display = 'none';
+  drawBackground();
+  animId = requestAnimationFrame(loop);
+}
+
+function loop(ts) {
+  // Initialise clock on first frame
+  if (startTime === null) startTime = ts;
+
+  // How many segments should be visible right now based on wall-clock time
+  const elapsed  = (ts - startTime) * speedMult;          // effective ms at 1× rate
+  const target   = Math.min(Math.floor(N * elapsed / BASE_DURATION), N);
+
+  // Draw any newly revealed segments
+  while (revealed < target) {
+    drawSegTo(pathCtx, revealed);
+    drawNode(pathCtx, revealed);
+    revealed++;
+  }
+  if (revealed > 0 && revealed <= N) drawNode(pathCtx, revealed); // current vertex
+
+  // Update HUD
+  document.getElementById('cnt').textContent = revealed;
+  document.getElementById('current-digit').textContent = revealed < N ? PI[revealed] : PI[N - 1];
+  document.getElementById('progress-fill').style.width = (revealed / N * 100).toFixed(1) + '%';
+
+  // Composite frame
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(pathCanvas, 0, 0);
+  drawTip(ctx);
+
+  if (revealed < N) {
+    animId = requestAnimationFrame(loop);
+  } else {
+    document.getElementById('restart').style.display = 'inline-block';
+    // Keep tip pulsing after completion
+    (function pulse() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(pathCanvas, 0, 0);
+      drawTip(ctx);
+      requestAnimationFrame(pulse);
+    })();
+  }
+}
+
+/* ─────────────── Boot ─────────────── */
+tf = computeTransform();
+drawBackground();
+startAnimation();
+</script>
+</body>
+</html>

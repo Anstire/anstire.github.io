@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beating Heart - p5.js Sketch | High-Res Render</title>
+    <style>
+        :root {
+            --bg: #0a0a0c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #canvas-container {
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow:
+                0 0 60px rgba(220, 40, 50, 0.15),
+                0 20px 60px rgba(0, 0, 0, 0.5);
+            transition: box-shadow 0.3s ease;
+        }
+
+        #canvas-container.recording {
+            box-shadow:
+                0 0 80px rgba(255, 60, 40, 0.35),
+                0 0 120px rgba(220, 30, 40, 0.2),
+                0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            display: block;
+            border-radius: 24px;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+
+        #record-btn {
+            position: relative;
+            padding: 12px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.6px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            color: #fff;
+            background: linear-gradient(135deg, #c0392b, #8b1a1a);
+            box-shadow: 0 4px 18px rgba(200, 40, 40, 0.35);
+            transition: all 0.25s ease;
+            outline: none;
+            text-transform: uppercase;
+        }
+
+        #record-btn:hover {
+            background: linear-gradient(135deg, #d9443a, #a01e1e);
+            box-shadow: 0 6px 24px rgba(220, 40, 40, 0.5);
+            transform: translateY(-2px);
+        }
+
+        #record-btn:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 10px rgba(180, 30, 30, 0.4);
+        }
+
+        #record-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            color: #aaa;
+            animation: pulse-recording 1.2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-recording {
+            0%,
+            100% {
+                box-shadow: 0 2px 8px rgba(255, 50, 40, 0.5);
+            }
+            50% {
+                box-shadow: 0 4px 22px rgba(255, 50, 40, 0.85);
+            }
+        }
+
+        .status-text {
+            color: #888;
+            font-size: 13px;
+            letter-spacing: 0.4px;
+            min-width: 80px;
+            text-align: center;
+            transition: color 0.3s ease;
+        }
+
+        .status-text.recording {
+            color: #f07070;
+            animation: blink-status 0.8s ease-in-out infinite;
+        }
+
+        @keyframes blink-status {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.35;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <!-- p5.js canvas will be placed here -->
+    </div>
+    <div class="controls">
+        <button id="record-btn" title="Record a 10-second seamless loop">● Record Max Quality</button>
+        <span class="status-text" id="status-text">Ready</span>
+    </div>
+
+    <!-- p5.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js">
+    </script>
+    <!-- CCapture.js CDN -->
+    <script src="https://unpkg.com/ccapture.js@1.0.9/build/CCapture.all.min.js">
+    </script>
+
+    <script>
+        // ─────────────────────────────────────
+        //  GLOBAL STATE
+        // ─────────────────────────────────────
+        let capturer;
+        let recording = false;
+        let recordingStartFrame = 0;
+        let recordButton;
+        let statusText;
+        let containerEl;
+
+        // Particle system for beat bursts
+        let particles = [];
+        const MAX_PARTICLES = 80;
+
+        // ─────────────────────────────────────
+        //  P5.JS SKETCH
+        // ─────────────────────────────────────
+        function setup() {
+            // Create canvas inside the container div
+            const canvas = createCanvas(600, 600);
+            canvas.parent('canvas-container');
+
+            // 🔥 QUALITY UPGRADE 1: Force double internal rendering resolution
+            pixelDensity(2);
+
+            // Fixed framerate for deterministic timing
+            frameRate(60);
+
+            // HSB color mode for easy hue shifting
+            colorMode(HSB, 360, 100, 100, 100);
+
+            // 🔥 QUALITY UPGRADE 2: Max Bitrate & Quality settings
+            capturer = new CCapture({
+                format: 'webm',
+                framerate: 60,
+                name: 'beating_heart_loop',
+                quality: 100,
+                videoBitsPerSecond: 50000000 // 50 Mbps to prevent artifacting
+            });
+
+            // Grab DOM elements
+            recordButton = document.getElementById('record-btn');
+            statusText = document.getElementById('status-text');
+            containerEl = document.getElementById('canvas-container');
+
+            // Wire up the Record button
+            recordButton.addEventListener('click', startRecording);
+
+            // Disable right-click context menu on canvas for cleaner UX
+            canvas.elt.addEventListener('contextmenu', (e) => e.preventDefault());
+        }
+
+        // ─────────────────────────────────────
+        //  RECORDING LOGIC
+        // ─────────────────────────────────────
+        function startRecording() {
+            if (recording) return; // Already recording
+
+            recording = true;
+            recordingStartFrame = frameCount;
+            capturer.start();
+
+            // Update UI
+            recordButton.innerHTML = '⬤ Recording…';
+            recordButton.disabled = true;
+            statusText.textContent = 'Capturing 10s loop…';
+            statusText.classList.add('recording');
+            containerEl.classList.add('recording');
+        }
+
+        function stopRecording() {
+            recording = false;
+            capturer.stop();
+            capturer.save();
+
+            // Reset UI
+            recordButton.innerHTML = '● Record Max Quality';
+            recordButton.disabled = false;
+            statusText.textContent = 'Saved! ✨';
+            statusText.classList.remove('recording');
+            containerEl.classList.remove('recording');
+
+            // Fade the "Saved!" message
+            setTimeout(() => {
+                if (!recording) {
+                    statusText.textContent = 'Ready';
+                }
+            }, 1800);
+        }
+
+        // ─────────────────────────────────────
+        //  HEART SHAPE (parametric equations)
+        //  Returns an array of {x, y} vertices
+        //  for the classic heart curve, scaled.
+        // ─────────────────────────────────────
+        function getHeartVertices(scale) {
+            const vertices = [];
+            const numPoints = 220; // High-res smooth curve
+            for (let i = 0; i < numPoints; i++) {
+                const t = (i / numPoints) * TWO_PI;
+                // Parametric heart equations
+                const x = 16.0 * pow(sin(t), 3);
+                const y = -(13.0 * cos(t) - 5.0 * cos(2 * t) - 2.0 * cos(3 * t) - cos(4 * t));
+                vertices.push({ x: x * scale, y: y * scale });
+            }
+            return vertices;
+        }
+
+        // ─────────────────────────────────────
+        //  DRAW THE HEART PATH from vertices
+        // ─────────────────────────────────────
+        function drawHeartPath(vertices) {
+            beginShape();
+            for (const v of vertices) {
+                curveVertex(v.x, v.y);
+            }
+            // Close the shape smoothly
+            const first = vertices[0];
+            const second = vertices[1];
+            const last = vertices[vertices.length - 1];
+            const secondLast = vertices[vertices.length - 2];
+            // Extra curveVertex calls for smooth closure
+            curveVertex(last.x, last.y);
+            curveVertex(first.x, first.y);
+            curveVertex(second.x, second.y);
+            endShape(CLOSE);
+        }
+
+        // ─────────────────────────────────────
+        //  MAIN DRAW LOOP
+        //  All timing uses frameCount only
+        //  (strictly deterministic, no millis())
+        // ─────────────────────────────────────
+        function draw() {
+            // ── DETERMINISTIC TIME ─────────────────
+            // Perfect 10-second loop = 600 frames at 60fps
+            // Beat period = 50 frames → 12 beats per loop
+            const loopFrame = frameCount % 600; // 0…599, loops every 10s
+            const cycleFrame = loopFrame % 50; // 0…49, position within one beat
+            const t = cycleFrame / 50; // Normalized 0…1 within a beat
+            const angle = (cycleFrame / 50) * TWO_PI; // 0…2π within a beat
+
+            // ── HEARTBEAT: SINE-DRIVEN "LUB-DUB" ──
+            // Use sine waves shaped with power functions to create
+            // sharp thumping peaks that mimic a real heartbeat.
+            // "Lub" (systolic): sharp, early peak
+            const lubPhase = angle - 0.45; // Phase offset so peak is early in cycle
+            const lubRaw = sin(lubPhase);
+            const lub = pow(max(0, lubRaw), 9); // Very sharp peak
+
+            // "Dub" (diastolic): slightly later, softer, wider
+            const dubPhase = angle - 2.05;
+            const dubRaw = sin(dubPhase);
+            const dub = 0.5 * pow(max(0, dubRaw), 7);
+
+            // Combined beat intensity (0 to ~1.5)
+            const beatIntensity = lub + dub;
+
+            // Smooth the intensity slightly for the color shift
+            // (using a simple low-pass-like approach with the previous frame's value…
+            //  but to stay strictly deterministic we compute a smoothed version directly)
+            // We'll use a tiny bit of the surrounding cycle for smoothness:
+            const prevCycleFrame = ((loopFrame - 1 + 600) % 600) % 50;
+            const prevT = prevCycleFrame / 50;
+            const prevAngle = prevT * TWO_PI;
+            const prevLub = pow(max(0, sin(prevAngle - 0.45)), 9);
+            const prevDub = 0.5 * pow(max(0, sin(prevAngle - 2.05)), 7);
+            const prevBeatIntensity = prevLub + prevDub;
+            const smoothBeat = beatIntensity * 0.7 + prevBeatIntensity * 0.3;
+
+            // ── CLEAR BACKGROUND ──────────────────
+            // Deep near-black with a subtle warm undertone
+            background(0, 8, 4);
+
+            // ── SUBTLE BACKGROUND RADIAL PULSE ────
+            // A faint radial gradient that breathes with the beat
+            const bgPulse = 1 + smoothBeat * 0.25;
+            noStroke();
+            for (let r = 350; r > 30; r -= 35) {
+                const alpha = map(r, 30, 350, 1.5, 0.05) * bgPulse;
+                const hueShift = smoothBeat * 6;
+                fill((355 + hueShift) % 360, 40, 18, constrain(alpha, 0, 100));
+                ellipse(width / 2, height / 2, r * 2, r * 2);
+            }
+
+            // ── HEART BEAT SCALE ──────────────────
+            const baseScale = 15.5;
+            const beatScale = 1 + smoothBeat * 0.14;
+            const totalScale = baseScale * beatScale;
+
+            // ── GLOW & COLOR PARAMETERS ───────────
+            const glowBlur = 22 + smoothBeat * 38;
+            const glowAlpha = 35 + smoothBeat * 50;
+            const hueBase = 356; // Deep crimson red
+            const hueShift = smoothBeat * 12; // Shift toward orange-red during thumps
+            const heartHue = (hueBase + hueShift) % 360;
+            const heartSaturation = 88 + smoothBeat * 8;
+            const heartBrightness = 52 + smoothBeat * 28;
+
+            // ── DRAW THE HEART ────────────────────
+            push();
+            translate(width / 2, height / 2 - 8); // Slightly above true center
+
+            const heartVerts = getHeartVertices(totalScale);
+            const heartVertsInner = getHeartVertices(totalScale * 0.92);
+            const heartVertsHighlight = getHeartVertices(totalScale * 0.78);
+
+            // --- Outer glow (large, soft, semi-transparent) ---
+            const ctx = drawingContext;
+            ctx.save();
+            ctx.shadowBlur = glowBlur;
+            ctx.shadowColor = `hsla(${heartHue}, ${heartSaturation}%, ${heartBrightness + 15}%, ${glowAlpha / 100})`;
+            fill(heartHue, heartSaturation, heartBrightness + 20, 18);
+            noStroke();
+            drawHeartPath(heartVerts);
+            ctx.restore();
+
+            // --- Medium glow layer ---
+            ctx.save();
+            ctx.shadowBlur = glowBlur * 0.55;
+            ctx.shadowColor = `hsla(${heartHue}, ${heartSaturation + 5}%, ${heartBrightness + 25}%, ${glowAlpha * 0.7 / 100})`;
+            fill(heartHue, heartSaturation, heartBrightness + 10, 28);
+            noStroke();
+            drawHeartPath(heartVerts);
+            ctx.restore();
+
+            // --- Main solid heart ---
+            ctx.save();
+            ctx.shadowBlur = glowBlur * 0.25;
+            ctx.shadowColor = `hsla(${heartHue}, ${heartSaturation}%, ${heartBrightness - 10}%, 0.55)`;
+            fill(heartHue, heartSaturation, heartBrightness);
+            noStroke();
+            drawHeartPath(heartVerts);
+            ctx.restore();
+
+            // --- Inner gradient layer (slightly lighter, smaller) ---
+            noStroke();
+            fill(heartHue, heartSaturation - 5, heartBrightness + 18, 55);
+            drawHeartPath(heartVertsInner);
+
+            // --- Specular highlight (top-left lobe shine) ---
+            const hlHue = (heartHue + 8) % 360;
+            const hlAlpha = 28 + smoothBeat * 18;
+            noStroke();
+            fill(hlHue, 25, 92, constrain(hlAlpha, 0, 100));
+            drawHeartPath(heartVertsHighlight);
+
+            // --- Crisp outline ---
+            noFill();
+            strokeWeight(1.8 + smoothBeat * 1.2);
+            stroke(heartHue, heartSaturation - 10, heartBrightness - 18, 70);
+            drawHeartPath(heartVerts);
+
+            pop();
+
+            // ── PARTICLES ─────────────────────────
+            // Spawn particles during thump peaks
+            if (smoothBeat > 0.35 && particles.length < MAX_PARTICLES) {
+                const spawnCount = int(map(smoothBeat, 0.35, 1.5, 1, 7));
+                for (let i = 0; i < spawnCount; i++) {
+                    // Random position on the heart surface
+                    const randT = random(TWO_PI);
+                    const sx = 16.0 * pow(sin(randT), 3) * totalScale;
+                    const sy = -(13.0 * cos(randT) - 5.0 * cos(2 * randT) - 2.0 * cos(3 * randT) - cos(4 * randT)) * totalScale;
+                    const cx = width / 2;
+                    const cy = height / 2 - 8;
+                    const px = cx + sx;
+                    const py = cy + sy;
+                    // Velocity outward from heart center
+                    const dx = px - cx;
+                    const dy = py - cy;
+                    const dist = sqrt(dx * dx + dy * dy) + 0.001;
+                    const speed = random(1.2, 3.5) * (1 + smoothBeat);
+                    particles.push({
+                        x: px,
+                        y: py,
+                        vx: (dx / dist) * speed + random(-0.6, 0.6),
+                        vy: (dy / dist) * speed + random(-0.6, 0.6),
+                        life: random(18, 34),
+                        maxLife: 34,
+                        size: random(1.2, 3.8),
+                        hue: heartHue + random(-8, 12),
+                    });
+                }
+            }
+
+            // Update & draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vx *= 0.985; // Slight drag
+                p.vy *= 0.985;
+                p.life--;
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                const lifeFrac = p.life / p.maxLife;
+                const alpha = lifeFrac * 70;
+                const sz = p.size * lifeFrac;
+                noStroke();
+                fill((p.hue + 360) % 360, 60, 90, constrain(alpha, 0, 100));
+                ellipse(p.x, p.y, sz, sz);
+            }
+
+            // ── SUBTLE RING PULSE (sine-wave-driven) ──
+            // A thin ring that expands with the sine rhythm
+            const ringPhase = sin(angle - 0.45); // Same phase as the lub
+            const ringRadius = 210 + ringPhase * 35;
+            const ringAlpha = constrain(12 + abs(ringPhase) * 22, 0, 40);
+            noFill();
+            strokeWeight(1.2);
+            stroke((heartHue + 15) % 360, 40, 75, ringAlpha);
+            ellipse(width / 2, height / 2 - 8, ringRadius * 2, ringRadius * 1.55);
+
+            // A second fainter ring for the dub
+            const ring2Phase = sin(angle - 2.05);
+            const ring2Radius = 195 + ring2Phase * 28;
+            const ring2Alpha = constrain(6 + abs(ring2Phase) * 16, 0, 28);
+            strokeWeight(0.8);
+            stroke((heartHue + 25) % 360, 30, 80, ring2Alpha);
+            ellipse(width / 2, height / 2 - 8, ring2Radius * 2, ring2Radius * 1.5);
+
+            // ── CCAPTURE: Capture at the VERY END of draw() ──
+            if (recording) {
+                capturer.capture(document.getElementById('defaultCanvas0'));
+
+                // Check if we've captured exactly 600 frames (10 seconds)
+                const capturedFrames = frameCount - recordingStartFrame;
+                if (capturedFrames >= 600) {
+                    stopRecording();
+                }
+            }
+
+            // ── UPDATE STATUS TEXT (live frame count during recording) ──
+            if (recording) {
+                const elapsed = frameCount - recordingStartFrame;
+                const secondsRemaining = ((600 - elapsed) / 60).toFixed(1);
+                if (elapsed > 0 && elapsed < 600 && frameCount % 6 === 0) {
+                    statusText.textContent = `Recording… ${secondsRemaining}s left`;
+                }
+                if (elapsed >= 600 && statusText.classList.contains('recording')) {
+                    statusText.textContent = 'Processing…';
+                }
+            }
+        }
+
+        // ─────────────────────────────────────
+        //  KEYBOARD SHORTCUT (optional)
+        //  Press 'R' to start recording
+        // ─────────────────────────────────────
+        function keyPressed() {
+            if (key === 'r' || key === 'R') {
+                if (!recording) {
+                    startRecording();
+                }
+            }
+        }
+
+        // ─────────────────────────────────────
+        //  CLEANUP ON PAGE UNLOAD
+        // ─────────────────────────────────────
+        window.addEventListener('beforeunload', () => {
+            if (recording) {
+                capturer.stop();
+                recording = false;
+            }
+        });
+    </script>
+</body>
+</html>

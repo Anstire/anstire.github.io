@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Phyllotaxis Spiral — Golden Ratio</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+  }
+
+  canvas {
+    display: block;
+    touch-action: none;
+  }
+
+  /* HUD overlay */
+  #hud {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 24px;
+    pointer-events: none;
+    opacity: 0;
+    animation: fadeIn 1s ease 1.2s forwards;
+  }
+
+  .stat {
+    text-align: center;
+    color: rgba(180, 120, 255, 0.55);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    line-height: 1.9;
+  }
+
+  .stat span {
+    display: block;
+    font-size: 13px;
+    color: rgba(100, 220, 255, 0.75);
+    letter-spacing: 0.08em;
+  }
+
+  #title {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(180, 100, 255, 0.35);
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    animation: fadeIn 1.5s ease 0.4s forwards;
+  }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="title">Phyllotaxis · Golden Angle · φ = 1.6180339887</div>
+<div id="hud">
+  <div class="stat">Particles<span id="s-count">0</span></div>
+  <div class="stat">Angle<span id="s-angle">137.5°</span></div>
+  <div class="stat">Scale<span id="s-c">—</span></div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ── Canvas setup ────────────────────────────────────────── */
+  const canvas = document.getElementById('c');
+  const ctx    = canvas.getContext('2d');
+  let W, H, cx, cy, maxR;
+
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  function resize() {
+    W  = window.innerWidth;
+    H  = window.innerHeight;
+    cx = W / 2;
+    cy = H / 2;
+    maxR = Math.min(W, H) * 0.47;
+    canvas.width  = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  resize();
+  window.addEventListener('resize', () => { resize(); reset(); });
+
+  /* ── Constants & state ───────────────────────────────────── */
+  const BASE_ANGLE     = 137.5;          // golden angle (degrees)
+  const DEG            = Math.PI / 180;
+  const MAX_PARTICLES  = 850;
+  const GROW_PER_FRAME = 3;             // new dots per frame during growth
+
+  // "breathing" oscillation targets
+  const BREATH_ANGLE_AMP = 0.55;        // ± degrees on the golden angle
+  const BREATH_C_AMP     = 0.12;        // ± fraction of c
+  const BREATH_SPEED     = 0.00042;     // radians per ms
+
+  let particles   = [];
+  let frameId     = null;
+  let lastTime    = 0;
+  let growing     = true;
+  let breathPhase = 0;
+
+  // HUD elements
+  const elCount = document.getElementById('s-count');
+  const elAngle = document.getElementById('s-angle');
+  const elC     = document.getElementById('s-c');
+
+  /* ── Particle colour ─────────────────────────────────────── */
+  // Maps normalised distance [0,1] → neon purple→blue→cyan HSL
+  function particleColor(t, alpha) {
+    // Hue: 285 (purple) → 210 (blue) → 180 (cyan)
+    const hue  = 285 - t * 105;
+    const sat  = 80 + t * 20;
+    const lite = 52 + t * 14;
+    return `hsla(${hue},${sat}%,${lite}%,${alpha})`;
+  }
+
+  /* ── Build dot list ──────────────────────────────────────── */
+  function buildDots(angleOffset, cScale) {
+    const c  = cScale * maxR / Math.sqrt(MAX_PARTICLES);   // auto-fit to canvas
+    const dots = new Array(MAX_PARTICLES);
+    for (let n = 0; n < MAX_PARTICLES; n++) {
+      const angleDeg = n * (BASE_ANGLE + angleOffset);
+      const r        = c * Math.sqrt(n);
+      const theta    = angleDeg * DEG;
+      dots[n] = {
+        x: cx + r * Math.cos(theta),
+        y: cy + r * Math.sin(theta),
+        r,
+        t: r / (c * Math.sqrt(MAX_PARTICLES - 1)),   // normalised 0→1
+      };
+    }
+    return dots;
+  }
+
+  /* ── Reset / restart ─────────────────────────────────────── */
+  function reset() {
+    cancelAnimationFrame(frameId);
+    particles  = [];
+    growing    = true;
+    breathPhase = 0;
+    lastTime   = performance.now();
+    frameId    = requestAnimationFrame(loop);
+  }
+
+  /* ── Draw a single particle ──────────────────────────────── */
+  function drawDot(dot, alpha) {
+    const radius = 1.7 + dot.t * 1.6;    // grow slightly outward
+    const col    = particleColor(dot.t, alpha);
+
+    // glow halo
+    ctx.shadowColor = particleColor(dot.t, alpha * 0.55);
+    ctx.shadowBlur  = 6 + dot.t * 8;
+
+    ctx.beginPath();
+    ctx.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = col;
+    ctx.fill();
+  }
+
+  /* ── Main animation loop ─────────────────────────────────── */
+  function loop(ts) {
+    const dt   = Math.min(ts - lastTime, 50);   // clamp for tab-focus spikes
+    lastTime   = ts;
+    breathPhase += dt * BREATH_SPEED;
+
+    // Breathing modifiers
+    const angleOffset = BREATH_ANGLE_AMP * Math.sin(breathPhase);
+    const cScale      = 1 + BREATH_C_AMP * Math.sin(breathPhase * 0.73 + 1.1);
+
+    // Rebuild geometry each frame (cheap for ≤850 points)
+    const dots = buildDots(angleOffset, cScale);
+
+    /* ── Grow phase: add new particles ── */
+    if (growing) {
+      const target = Math.min(particles.length + GROW_PER_FRAME, MAX_PARTICLES);
+      while (particles.length < target) particles.push(particles.length);
+      if (particles.length >= MAX_PARTICLES) growing = false;
+    }
+
+    /* ── Clear ── */
+    ctx.clearRect(0, 0, W, H);
+
+    /* ── Background radial glow (atmosphere) ── */
+    const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR * 0.6);
+    grd.addColorStop(0,   'rgba(40,0,70,0.18)');
+    grd.addColorStop(0.5, 'rgba(0,10,40,0.10)');
+    grd.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, H);
+
+    /* ── Draw dots ── */
+    ctx.shadowBlur = 0;
+    const count = particles.length;
+    for (let i = 0; i < count; i++) {
+      const alpha = growing
+        ? (i < count - GROW_PER_FRAME ? 1 : (i - (count - GROW_PER_FRAME)) / GROW_PER_FRAME)
+        : 1;
+      drawDot(dots[i], alpha);
+    }
+
+    // Reset shadow after drawing
+    ctx.shadowBlur  = 0;
+    ctx.shadowColor = 'transparent';
+
+    /* ── HUD update (throttled) ── */
+    if ((ts | 0) % 4 === 0) {
+      elCount.textContent = count;
+      elAngle.textContent = (BASE_ANGLE + angleOffset).toFixed(3) + '°';
+      elC.textContent     = cScale.toFixed(4);
+    }
+
+    frameId = requestAnimationFrame(loop);
+  }
+
+  /* ── Tap / click to restart ──────────────────────────────── */
+  canvas.addEventListener('click',     reset);
+  canvas.addEventListener('touchstart', reset, { passive: true });
+
+  /* ── Kick off ────────────────────────────────────────────── */
+  reset();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newton's Cradle - Matter.js Simulation</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        canvas {
+            display: block;
+            border-radius: 20px;
+            box-shadow:
+                0 0 0 1px rgba(255, 255, 255, 0.04),
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 120px rgba(60, 120, 200, 0.06);
+            cursor: default;
+        }
+
+        .info {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            letter-spacing: 0.04em;
+            text-align: center;
+            transition: color 0.4s;
+        }
+
+        .info span {
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+
+        .reset-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 10px 22px;
+            border-radius: 24px;
+            cursor: pointer;
+            font-size: 13px;
+            letter-spacing: 0.03em;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .reset-btn:active {
+            transform: scale(0.96);
+            transition: transform 0.1s;
+        }
+
+        @media (max-width: 850px) {
+            canvas {
+                width: 95vw;
+                height: auto;
+                border-radius: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="cradleCanvas" width="800" height="500" aria-label="Newton's Cradle Physics Simulation"></canvas>
+        <button class="reset-btn" id="resetBtn" title="Reset the simulation">↺ Reset Cradle</button>
+        <p class="info">Pull-back: <span>45°</span> &nbsp;|&nbsp; Spheres: <span>5</span> &nbsp;|&nbsp; Restitution: <span>1.0</span> &nbsp;|&nbsp; Elastic collisions with momentum conservation</p>
+    </div>
+
+    <!-- Matter.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js">
+    </script>
+
+    <script>
+        (function() {
+            // ─────────────────────────────────────
+            // DOM Elements
+            // ─────────────────────────────────────
+            const canvas = document.getElementById('cradleCanvas');
+            const ctx = canvas.getContext('2d');
+            const resetBtn = document.getElementById('resetBtn');
+
+            const W = canvas.width;
+            const H = canvas.height;
+
+            // ─────────────────────────────────────
+            // Matter.js Aliases
+            // ─────────────────────────────────────
+            const {
+                Engine,
+                World,
+                Bodies,
+                Body,
+                Constraint,
+                Events,
+                Runner
+            } = Matter;
+
+            // ─────────────────────────────────────
+            // Configuration
+            // ─────────────────────────────────────
+            const SPHERE_RADIUS = 22;
+            const SPHERE_DIAMETER = SPHERE_RADIUS * 2;
+            const NUM_SPHERES = 5;
+            const STRING_LENGTH = 210;
+            const PULL_ANGLE_DEG = 45;
+            const PULL_ANGLE_RAD = (PULL_ANGLE_DEG * Math.PI) / 180;
+            const RESTITUTION = 1.0;
+            const CONSTRAINT_STIFFNESS = 0.98;
+            const CONSTRAINT_DAMPING = 0.0005;
+            const FRICTION_AIR = 0.0003;
+            const FRICTION = 0;
+
+            // Layout calculations
+            const topBarY = 72;
+            const topBarHeight = 16;
+            const anchorY = topBarY + topBarHeight + 6; // Small gap below bar
+            const sphereRestY = anchorY + STRING_LENGTH;
+            const totalSpan = (NUM_SPHERES - 1) * SPHERE_DIAMETER;
+            const centerX = W / 2;
+            const firstSphereCenterX = centerX - totalSpan / 2;
+
+            // ─────────────────────────────────────
+            // Create Engine & World
+            // ─────────────────────────────────────
+            const engine = Engine.create({
+                gravity: { x: 0, y: 1.2, scale: 0.001 },
+                positionIterations: 14,
+                velocityIterations: 10,
+                constraintIterations: 6,
+            });
+
+            const world = engine.world;
+
+            // ─────────────────────────────────────
+            // Create Spheres & Constraints
+            // ─────────────────────────────────────
+            const spheres = [];
+            const anchors = [];
+            const constraints = [];
+
+            // Metallic color palette for spheres
+            const sphereColors = [
+                { base: '#b8c0cc', highlight: '#e8edf3', shadow: '#6e7680', rim: '#5a626c' },
+                { base: '#bac2ce', highlight: '#eaf0f7', shadow: '#707882', rim: '#5c646e' },
+                { base: '#bcc4d0', highlight: '#ecf2f9', shadow: '#727a84', rim: '#5e6670' },
+                { base: '#bac2ce', highlight: '#eaf0f7', shadow: '#707882', rim: '#5c646e' },
+                { base: '#b8c0cc', highlight: '#e8edf3', shadow: '#6e7680', rim: '#5a626c' },
+            ];
+
+            for (let i = 0; i < NUM_SPHERES; i++) {
+                const restX = firstSphereCenterX + i * SPHERE_DIAMETER;
+                const restY = sphereRestY;
+                const anchorX = restX;
+
+                // Determine initial position
+                let initX = restX;
+                let initY = restY;
+
+                if (i === 0) {
+                    // Pull back the leftmost sphere to 45 degrees
+                    initX = anchorX - STRING_LENGTH * Math.sin(PULL_ANGLE_RAD);
+                    initY = anchorY + STRING_LENGTH * Math.cos(PULL_ANGLE_RAD);
+                }
+
+                // Create sphere body
+                const sphere = Bodies.circle(initX, initY, SPHERE_RADIUS, {
+                    restitution: RESTITUTION,
+                    friction: FRICTION,
+                    frictionAir: FRICTION_AIR,
+                    frictionStatic: 0,
+                    density: 0.008,
+                    label: `sphere-${i}`,
+                    render: { visible: false },
+                    collisionFilter: {
+                        category: 0x0001,
+                        mask: 0x0001,
+                        group: 0,
+                    },
+                });
+
+                // Ensure sphere starts with zero velocity
+                Body.setVelocity(sphere, { x: 0, y: 0 });
+                Body.setAngularVelocity(sphere, 0);
+
+                spheres.push(sphere);
+                anchors.push({ x: anchorX, y: anchorY });
+
+                // Create string constraint from anchor point to sphere center
+                const constraint = Constraint.create({
+                    pointA: { x: anchorX, y: anchorY },
+                    bodyB: sphere,
+                    pointB: { x: 0, y: 0 },
+                    length: STRING_LENGTH,
+                    stiffness: CONSTRAINT_STIFFNESS,
+                    damping: CONSTRAINT_DAMPING,
+                    render: { visible: false },
+                });
+
+                constraints.push(constraint);
+
+                // Add to world
+                World.add(world, [sphere, constraint]);
+            }
+
+            // ─────────────────────────────────────
+            // Create Top Bar (static)
+            // ─────────────────────────────────────
+            const topBarBody = Bodies.rectangle(W / 2, topBarY + topBarHeight / 2, W - 40, topBarHeight, {
+                isStatic: true,
+                render: { visible: false },
+                collisionFilter: {
+                    category: 0x0002,
+                    mask: 0x0000,
+                },
+                chamfer: { radius: 4 },
+            });
+            World.add(world, topBarBody);
+
+            // ─────────────────────────────────────
+            // Create Side Posts (static, decorative)
+            // ─────────────────────────────────────
+            const postWidth = 10;
+            const postHeight = 50;
+            const postY = topBarY + topBarHeight / 2 + postHeight / 2 + 4;
+            const leftPostX = firstSphereCenterX - SPHERE_DIAMETER - 16;
+            const rightPostX = firstSphereCenterX + totalSpan + SPHERE_DIAMETER + 16;
+
+            const leftPost = Bodies.rectangle(leftPostX, postY, postWidth, postHeight, {
+                isStatic: true,
+                render: { visible: false },
+                collisionFilter: { category: 0x0002, mask: 0x0000 },
+                chamfer: { radius: 3 },
+            });
+            const rightPost = Bodies.rectangle(rightPostX, postY, postWidth, postHeight, {
+                isStatic: true,
+                render: { visible: false },
+                collisionFilter: { category: 0x0002, mask: 0x0000 },
+                chamfer: { radius: 3 },
+            });
+            World.add(world, [leftPost, rightPost]);
+
+            // ─────────────────────────────────────
+            // Track energy for display (optional)
+            // ─────────────────────────────────────
+            let totalEnergyHistory = [];
+            const maxEnergyHistory = 120;
+
+            // ─────────────────────────────────────
+            // Rendering Functions
+            // ─────────────────────────────────────
+            function drawBackground() {
+                // Solid dark background
+                ctx.fillStyle = '#0d1117';
+                ctx.fillRect(0, 0, W, H);
+
+                // Subtle radial vignette
+                const vignetteGrad = ctx.createRadialGradient(W / 2, H / 2, W * 0.35, W / 2, H / 2, W *
+                0.75);
+                vignetteGrad.addColorStop(0, 'rgba(13,17,23,0)');
+                vignetteGrad.addColorStop(1, 'rgba(8,10,14,0.7)');
+                ctx.fillStyle = vignetteGrad;
+                ctx.fillRect(0, 0, W, H);
+
+                // Very subtle horizontal line near the bottom for "grounding"
+                ctx.strokeStyle = 'rgba(255,255,255,0.015)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(40, sphereRestY + SPHERE_RADIUS + 50);
+                ctx.lineTo(W - 40, sphereRestY + SPHERE_RADIUS + 50);
+                ctx.stroke();
+            }
+
+            function drawTopBar() {
+                const barX = W / 2;
+                const barY = topBarY + topBarHeight / 2;
+                const barW = W - 40;
+                const barH = topBarHeight;
+
+                // Main bar gradient
+                const barGrad = ctx.createLinearGradient(0, barY - barH / 2, 0, barY + barH / 2);
+                barGrad.addColorStop(0, '#3a4048');
+                barGrad.addColorStop(0.3, '#4a525c');
+                barGrad.addColorStop(0.5, '#555d68');
+                barGrad.addColorStop(0.7, '#3e454d');
+                barGrad.addColorStop(1, '#2a3038');
+
+                ctx.fillStyle = barGrad;
+                ctx.beginPath();
+                ctx.roundRect(barX - barW / 2, barY - barH / 2, barW, barH, 6);
+                ctx.fill();
+
+                // Subtle highlight on top edge
+                ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(barX - barW / 2 + 1, barY - barH / 2 + 1, barW - 2, barH - 2, 5);
+                ctx.stroke();
+
+                // Bottom shadow line
+                ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(barX - barW / 2 + 6, barY + barH / 2);
+                ctx.lineTo(barX + barW / 2 - 6, barY + barH / 2);
+                ctx.stroke();
+            }
+
+            function drawPosts() {
+                const posts = [
+                    { x: leftPostX, y: postY, w: postWidth, h: postHeight },
+                    { x: rightPostX, y: postY, w: postWidth, h: postHeight },
+                ];
+
+                posts.forEach(post => {
+                    const grad = ctx.createLinearGradient(0, post.y - post.h / 2, 0, post.y + post.h / 2);
+                    grad.addColorStop(0, '#4a525c');
+                    grad.addColorStop(0.4, '#3a4048');
+                    grad.addColorStop(0.6, '#353b43');
+                    grad.addColorStop(1, '#252a30');
+
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.roundRect(post.x - post.w / 2, post.y - post.h / 2, post.w, post.h, 3);
+                    ctx.fill();
+
+                    // Highlight
+                    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.roundRect(post.x - post.w / 2 + 1, post.y - post.h / 2 + 1, post.w - 2, post.h - 2, 2);
+                    ctx.stroke();
+                });
+            }
+
+            function drawString(anchorX, anchorY, sphereX, sphereY) {
+                // Main string
+                ctx.strokeStyle = 'rgba(200,205,215,0.55)';
+                ctx.lineWidth = 1.2;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(anchorX, anchorY);
+                ctx.lineTo(sphereX, sphereY);
+                ctx.stroke();
+
+                // Subtle secondary highlight on string
+                ctx.strokeStyle = 'rgba(230,235,245,0.2)';
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(anchorX - 0.4, anchorY);
+                ctx.lineTo(sphereX - 0.4, sphereY);
+                ctx.stroke();
+            }
+
+            function drawAnchorPoint(x, y) {
+                // Small metallic ring at anchor
+                const ringGrad = ctx.createRadialGradient(x, y, 1, x, y, 5);
+                ringGrad.addColorStop(0, '#889098');
+                ringGrad.addColorStop(0.6, '#555d68');
+                ringGrad.addColorStop(1, '#3a4048');
+
+                ctx.fillStyle = ringGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Tiny highlight
+                ctx.fillStyle = 'rgba(255,255,255,0.35)';
+                ctx.beginPath();
+                ctx.arc(x - 1, y - 1.5, 1.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            function drawSphere(sphere, colorPalette, index) {
+                const { x, y } = sphere.position;
+                const r = SPHERE_RADIUS;
+
+                // ── Outer glow (subtle) ──
+                const glowGrad = ctx.createRadialGradient(x, y, r * 0.85, x, y, r * 1.25);
+                glowGrad.addColorStop(0, 'rgba(180,195,210,0.08)');
+                glowGrad.addColorStop(1, 'rgba(180,195,210,0)');
+                ctx.fillStyle = glowGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, r * 1.25, 0, Math.PI * 2);
+                ctx.fill();
+
+                // ── Main sphere with 3D metallic radial gradient ──
+                // Offset the gradient center to simulate light from upper-left
+                const lightOffsetX = -r * 0.3;
+                const lightOffsetY = -r * 0.35;
+                const gradCenterX = x + lightOffsetX;
+                const gradCenterY = y + lightOffsetY;
+
+                const sphereGrad = ctx.createRadialGradient(gradCenterX, gradCenterY, r * 0.05, x, y, r);
+                sphereGrad.addColorStop(0, colorPalette.highlight);
+                sphereGrad.addColorStop(0.25, colorPalette.base);
+                sphereGrad.addColorStop(0.55, colorPalette.base);
+                sphereGrad.addColorStop(0.78, colorPalette.shadow);
+                sphereGrad.addColorStop(0.92, colorPalette.rim);
+                sphereGrad.addColorStop(1, '#3a3f48');
+
+                ctx.fillStyle = sphereGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+
+                // ── Specular highlight (bright spot) ──
+                const specGrad = ctx.createRadialGradient(
+                    x - r * 0.3, y - r * 0.38, r * 0.02,
+                    x - r * 0.15, y - r * 0.2, r * 0.7
+                );
+                specGrad.addColorStop(0, 'rgba(255,255,255,0.7)');
+                specGrad.addColorStop(0.3, 'rgba(255,255,255,0.25)');
+                specGrad.addColorStop(0.7, 'rgba(255,255,255,0.03)');
+                specGrad.addColorStop(1, 'rgba(255,255,255,0)');
+
+                ctx.fillStyle = specGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+
+                // ── Subtle rim light (bottom-right edge) ──
+                const rimGrad = ctx.createRadialGradient(
+                    x + r * 0.35, y + r * 0.4, r * 0.05,
+                    x, y, r
+                );
+                rimGrad.addColorStop(0, 'rgba(255,255,255,0.06)');
+                rimGrad.addColorStop(0.6, 'rgba(255,255,255,0.01)');
+                rimGrad.addColorStop(1, 'rgba(255,255,255,0)');
+
+                ctx.fillStyle = rimGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+
+                // ── Very subtle outline ──
+                ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+                ctx.lineWidth = 0.7;
+                ctx.beginPath();
+                ctx.arc(x, y, r - 0.3, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            function drawAll() {
+                drawBackground();
+                drawPosts();
+                drawTopBar();
+
+                // Draw all strings and anchor points
+                for (let i = 0; i < NUM_SPHERES; i++) {
+                    const anchor = anchors[i];
+                    const sphere = spheres[i];
+                    drawString(anchor.x, anchor.y, sphere.position.x, sphere.position.y);
+                    drawAnchorPoint(anchor.x, anchor.y);
+                }
+
+                // Draw all spheres (draw back-to-front for proper overlap)
+                // The leftmost sphere (index 0) should be on top when swinging
+                const drawOrder = [2, 3, 4, 1, 0]; // middle spheres first, then outer
+                drawOrder.forEach(i => {
+                    if (i >= 0 && i < NUM_SPHERES) {
+                        drawSphere(spheres[i], sphereColors[i], i);
+                    }
+                });
+            }
+
+            // ─────────────────────────────────────
+            // Energy tracking for display
+            // ─────────────────────────────────────
+            function calculateTotalEnergy() {
+                let totalKE = 0;
+                let totalPE = 0;
+                const g = engine.gravity.y * engine.gravity.scale * 1000;
+
+                spheres.forEach((sphere, i) => {
+                    const vx = sphere.velocity.x;
+                    const vy = sphere.velocity.y;
+                    const speedSq = vx * vx + vy * vy;
+                    const mass = sphere.mass;
+                    totalKE += 0.5 * mass * speedSq;
+
+                    // Potential energy relative to rest position
+                    const dy = sphere.position.y - sphereRestY;
+                    totalPE += mass * g * dy;
+                });
+
+                return totalKE + Math.max(0, totalPE);
+            }
+
+            // ─────────────────────────────────────
+            // Reset Function
+            // ─────────────────────────────────────
+            function resetSimulation() {
+                for (let i = 0; i < NUM_SPHERES; i++) {
+                    const sphere = spheres[i];
+                    const anchor = anchors[i];
+                    const restX = firstSphereCenterX + i * SPHERE_DIAMETER;
+
+                    let targetX = restX;
+                    let targetY = sphereRestY;
+
+                    if (i === 0) {
+                        targetX = anchor.x - STRING_LENGTH * Math.sin(PULL_ANGLE_RAD);
+                        targetY = anchor.y + STRING_LENGTH * Math.cos(PULL_ANGLE_RAD);
+                    }
+
+                    Body.setPosition(sphere, { x: targetX, y: targetY });
+                    Body.setVelocity(sphere, { x: 0, y: 0 });
+                    Body.setAngularVelocity(sphere, 0);
+                    Body.setAngle(sphere, 0);
+                    Body.setAngularSpeed(sphere, 0);
+
+                    // Reset any internal forces
+                    sphere.force = { x: 0, y: 0 };
+                    sphere.torque = 0;
+                }
+
+                // Reset constraint lengths
+                constraints.forEach(c => {
+                    c.length = STRING_LENGTH;
+                });
+
+                totalEnergyHistory = [];
+            }
+
+            // ─────────────────────────────────────
+            // Event: Reset Button
+            // ─────────────────────────────────────
+            resetBtn.addEventListener('click', () => {
+                resetSimulation();
+
+                // Brief visual feedback
+                resetBtn.style.color = '#fff';
+                resetBtn.style.borderColor = 'rgba(255,255,255,0.4)';
+                setTimeout(() => {
+                    resetBtn.style.color = 'rgba(255,255,255,0.7)';
+                    resetBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+                }, 200);
+            });
+
+            // ─────────────────────────────────────
+            // Keyboard shortcut: 'R' to reset
+            // ─────────────────────────────────────
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'r' || e.key === 'R') {
+                    if (document.activeElement === document.body ||
+                        document.activeElement === resetBtn) {
+                        resetSimulation();
+                        resetBtn.style.color = '#fff';
+                        resetBtn.style.borderColor = 'rgba(255,255,255,0.4)';
+                        setTimeout(() => {
+                            resetBtn.style.color = 'rgba(255,255,255,0.7)';
+                            resetBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+                        }, 200);
+                    }
+                }
+            });
+
+            // ─────────────────────────────────────
+            // Render Loop
+            // ─────────────────────────────────────
+            function renderLoop() {
+                // Update physics
+                Engine.update(engine, 1000 / 60);
+
+                // Track energy
+                const energy = calculateTotalEnergy();
+                totalEnergyHistory.push(energy);
+                if (totalEnergyHistory.length > maxEnergyHistory) {
+                    totalEnergyHistory.shift();
+                }
+
+                // Clear and render
+                ctx.clearRect(0, 0, W, H);
+                drawAll();
+
+                // ── Subtle energy indicator dot ──
+                if (totalEnergyHistory.length > 10) {
+                    const recentAvg = totalEnergyHistory.slice(-10).reduce((a, b) => a + b, 0) / 10;
+                    const initialEnergy = totalEnergyHistory[0] || recentAvg;
+                    const energyRatio = initialEnergy > 0 ? Math.max(0, Math.min(1, recentAvg / initialEnergy)) :
+                    1;
+
+                    const dotX = W - 32;
+                    const dotY = H - 32;
+                    const dotR = 5;
+
+                    // Background circle
+                    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+                    ctx.beginPath();
+                    ctx.arc(dotX, dotY, dotR + 4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Energy indicator
+                    const hue = 200 - (1 - energyRatio) * 160; // blue to red
+                    ctx.fillStyle = `hsla(${hue}, 70%, 55%, 0.8)`;
+                    ctx.beginPath();
+                    ctx.arc(dotX, dotY, dotR, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Glow
+                    const glowGrad = ctx.createRadialGradient(dotX, dotY, dotR * 0.5, dotX, dotY, dotR * 2.5);
+                    glowGrad.addColorStop(0, `hsla(${hue}, 70%, 55%, 0.3)`);
+                    glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = glowGrad;
+                    ctx.beginPath();
+                    ctx.arc(dotX, dotY, dotR * 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                requestAnimationFrame(renderLoop);
+            }
+
+            // ─────────────────────────────────────
+            // Handle Canvas Resize for HiDPI
+            // ─────────────────────────────────────
+            function handleDPR() {
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                const rect = canvas.getBoundingClientRect();
+                if (dpr > 1 && canvas.width === 800) {
+                    // Keep the internal resolution at 800x500 for consistency
+                    // but scale the canvas CSS if needed
+                    canvas.style.width = '800px';
+                    canvas.style.height = '500px';
+                }
+            }
+            handleDPR();
+            window.addEventListener('resize', handleDPR);
+
+            // ─────────────────────────────────────
+            // polyfill: roundRect (for older browsers)
+            // ─────────────────────────────────────
+            if (!ctx.roundRect) {
+                ctx.roundRect = function(x, y, w, h, r) {
+                    if (typeof r === 'number') r = { tl: r, tr: r, br: r, bl: r };
+                    ctx.beginPath();
+                    ctx.moveTo(x + r.tl, y);
+                    ctx.lineTo(x + w - r.tr, y);
+                    ctx.quadraticCurveTo(x + w, y, x + w, y + r.tr);
+                    ctx.lineTo(x + w, y + h - r.br);
+                    ctx.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
+                    ctx.lineTo(x + r.bl, y + h);
+                    ctx.quadraticCurveTo(x, y + h, x, y + h - r.bl);
+                    ctx.lineTo(x, y + r.tl);
+                    ctx.quadraticCurveTo(x, y, x + r.tl, y);
+                    ctx.closePath();
+                };
+            }
+
+            // ─────────────────────────────────────
+            // Start the Simulation
+            // ─────────────────────────────────────
+            console.log('%c🔮 Newton\'s Cradle Ready %c| %c5 spheres • 45° pullback • Elastic collisions',
+                'color:#b8c0cc; font-weight:bold;',
+                '',
+                'color:#889;');
+            console.log('%c   Press %cR%c to reset • Click the button below',
+                'color:#889;',
+                'color:#fff; font-weight:bold;',
+                'color:#889;');
+
+            // Initial reset to ensure clean state
+            resetSimulation();
+
+            // Start the render loop
+            requestAnimationFrame(renderLoop);
+
+            // ─────────────────────────────────────
+            // Optional: Gentle energy refresh after very long runtime
+            // ─────────────────────────────────────
+            let autoRefreshTimeout;
+            const setupAutoRefresh = () => {
+                autoRefreshTimeout = setTimeout(() => {
+                    const recentAvg = totalEnergyHistory.length > 30 ?
+                        totalEnergyHistory.slice(-30).reduce((a, b) => a + b, 0) / 30 :
+                        calculateTotalEnergy();
+                    const initialEnergy = totalEnergyHistory[0] || recentAvg;
+                    const energyRatio = initialEnergy > 0 ? recentAvg / initialEnergy : 1;
+
+                    // If energy has dropped below 15%, auto-reset for continued enjoyment
+                    if (energyRatio < 0.15 && totalEnergyHistory.length > 60) {
+                        resetSimulation();
+                    }
+                    setupAutoRefresh();
+                }, 30000); // Check every 30 seconds
+            };
+            setupAutoRefresh();
+
+            // Clean up timeout on page unload (good practice)
+            window.addEventListener('beforeunload', () => {
+                clearTimeout(autoRefreshTimeout);
+            });
+
+            // ─────────────────────────────────────
+            // Expose for debugging
+            // ─────────────────────────────────────
+            window.__cradleAPI = {
+                spheres,
+                anchors,
+                constraints,
+                engine,
+                world,
+                reset: resetSimulation,
+                getEnergy: calculateTotalEnergy,
+                getEnergyHistory: () => [...totalEnergyHistory],
+                config: {
+                    sphereRadius: SPHERE_RADIUS,
+                    numSpheres: NUM_SPHERES,
+                    stringLength: STRING_LENGTH,
+                    pullAngleDeg: PULL_ANGLE_DEG,
+                    restitution: RESTITUTION,
+                },
+            };
+
+        })();
+    </script>
+</body>
+</html>

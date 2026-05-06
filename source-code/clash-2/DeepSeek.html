@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Phyllotaxis Spiral - Golden Ratio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000000;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+        }
+
+        /* Subtle info hint that fades out */
+        .hint {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.35);
+            font-family: 'SF Pro Display', 'Helvetica Neue', 'Segoe UI', sans-serif;
+            font-size: 13px;
+            letter-spacing: 0.04em;
+            pointer-events: none;
+            z-index: 10;
+            animation: fadeHint 6s ease-in-out forwards;
+        }
+
+        @keyframes fadeHint {
+            0% {
+                opacity: 0;
+            }
+            15% {
+                opacity: 1;
+            }
+            75% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="hint" id="hint">✧ golden spiral breathing ✧</div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const hint = document.getElementById('hint');
+
+            // ─────────────────────────────────────
+            // Configuration
+            // ─────────────────────────────────────
+            const TOTAL_POINTS = 1800; // Total points in the fully grown spiral
+            const GROWTH_RATE = 14; // Points added per second (smooth growth)
+            const BASE_ANGLE = 137.50776405003785; // Golden angle: 360 * (1 - 1/φ)
+            const ANGLE_BREATHING_AMP = 2.2; // Degrees of angle fluctuation
+            const C_BREATHING_AMP_RATIO = 0.12; // C fluctuation as ratio of baseC
+            const BREATHING_FREQ_ANGLE = 1.35; // Hz for angle breathing
+            const BREATHING_FREQ_C = 1.75; // Hz for c breathing
+            const GLOBAL_ROTATION_RATE = 0.25; // Radians per second (slow spin)
+            const COLOR_DRIFT_RATE = 4.5; // Hue drift speed
+            const HUE_CYCLE_MULTIPLIER = 1.6; // How many color cycles across the radius
+            const NEON_SATURATION = 95; // HSL saturation (%)
+            const NEON_LIGHTNESS = 58; // HSL lightness (%)
+            const PARTICLE_SIZE_MAX = 2.6; // Max particle radius (px) at center
+            const PARTICLE_SIZE_MIN = 1.0; // Min particle radius (px) at edge
+            const DPR_CAP = 2; // Cap device pixel ratio for mobile performance
+
+            // ─────────────────────────────────────
+            // State
+            // ─────────────────────────────────────
+            let centerX = 0;
+            let centerY = 0;
+            let baseC = 3.8; // Base spacing constant (recalculated on resize)
+            let maxRadius = 0;
+            let currentMaxN = 0; // How many points are currently visible (grows over time)
+            let elapsedTime = 0; // Total elapsed seconds
+            let sqrtLookup = []; // Precomputed sqrt(n) for performance
+            let animationId = null;
+            let lastTimestamp = null;
+
+            // ─────────────────────────────────────
+            // Canvas sizing with DPR awareness
+            // ─────────────────────────────────────
+            function resizeCanvas() {
+                const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
+                const displayWidth = window.innerWidth;
+                const displayHeight = window.innerHeight;
+
+                // Set internal resolution
+                canvas.width = Math.floor(displayWidth * dpr);
+                canvas.height = Math.floor(displayHeight * dpr);
+
+                // Reset transform for DPR scaling
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.scale(dpr, dpr);
+
+                // Recalculate center and spiral parameters
+                centerX = displayWidth / 2;
+                centerY = displayHeight / 2;
+                const usableRadius = Math.min(displayWidth, displayHeight) * 0.44;
+                maxRadius = usableRadius;
+                baseC = usableRadius / Math.sqrt(TOTAL_POINTS);
+
+                // Rebuild sqrt lookup
+                sqrtLookup = new Array(TOTAL_POINTS + 1);
+                for (let i = 0; i <= TOTAL_POINTS; i++) {
+                    sqrtLookup[i] = Math.sqrt(i);
+                }
+            }
+
+            // ─────────────────────────────────────
+            // Initial setup
+            // ─────────────────────────────────────
+            resizeCanvas();
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                // Reset growth on resize for a nice restart feel
+                currentMaxN = Math.min(currentMaxN, TOTAL_POINTS * 0.3);
+            });
+
+            // Handle orientation change on mobile
+            window.addEventListener('orientationchange', () => {
+                setTimeout(resizeCanvas, 200);
+                currentMaxN = Math.min(currentMaxN, TOTAL_POINTS * 0.3);
+            });
+
+            // ─────────────────────────────────────
+            // Animation loop
+            // ─────────────────────────────────────
+            function animate(timestamp) {
+                if (lastTimestamp === null) {
+                    lastTimestamp = timestamp;
+                }
+
+                // Calculate delta time in seconds, capped to avoid jumps
+                let dt = (timestamp - lastTimestamp) / 1000;
+                if (dt <= 0) dt = 0.016;
+                if (dt > 0.15) dt = 0.15; // Cap at 150ms to prevent spiral jumps on tab switch
+
+                lastTimestamp = timestamp;
+                elapsedTime += dt;
+
+                // ── Grow the spiral ─────────────────
+                if (currentMaxN < TOTAL_POINTS) {
+                    const pointsToAdd = GROWTH_RATE * dt;
+                    currentMaxN = Math.min(currentMaxN + pointsToAdd, TOTAL_POINTS);
+                }
+
+                // ── Breathing / Kaleidoscope modulation ──
+                const angleModulation = Math.sin(elapsedTime * BREATHING_FREQ_ANGLE * Math.PI * 2) *
+                    ANGLE_BREATHING_AMP;
+                const cModulation = Math.sin(elapsedTime * BREATHING_FREQ_C * Math.PI * 2 + 0.7) *
+                    (baseC * C_BREATHING_AMP_RATIO);
+                const globalRotation = elapsedTime * GLOBAL_ROTATION_RATE;
+
+                const effectiveAngleDeg = BASE_ANGLE + angleModulation;
+                const effectiveAngleRad = effectiveAngleDeg * (Math.PI / 180);
+                const effectiveC = baseC + cModulation;
+                const colorDrift = elapsedTime * COLOR_DRIFT_RATE;
+
+                // ── Clear and draw background ──────
+                ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+                // ── Draw all visible points ─────────
+                const maxN = Math.floor(currentMaxN);
+                const currentMaxRadius = effectiveC * sqrtLookup[maxN];
+
+                for (let n = 0; n <= maxN; n++) {
+                    const sqrtN = sqrtLookup[n];
+                    const radius = effectiveC * sqrtN;
+                    const angle = n * effectiveAngleRad + globalRotation;
+
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+
+                    // ── Color: HSL gradient cycling through neon purple → blue → cyan ──
+                    // Hue cycles based on radius with a slow drift
+                    const hueRaw = 300 - ((radius * HUE_CYCLE_MULTIPLIER + colorDrift) % 120);
+                    // Clamp/ensure we stay in the purple(300) → blue(240) → cyan(180) range
+                    const hue = ((hueRaw % 120) + 120) % 120 + 180;
+                    // hue is now in [180, 300] — cyan through blue to purple
+
+                    // ── Particle size: larger near center, smaller at edges ──
+                    const sizeRatio = currentMaxRadius > 0 ? radius / currentMaxRadius : 0;
+                    const particleRadius = PARTICLE_SIZE_MAX - sizeRatio * (PARTICLE_SIZE_MAX - PARTICLE_SIZE_MIN);
+
+                    // ── Slight size breathing ──
+                    const sizeBreathing = 1 + Math.sin(elapsedTime * BREATHING_FREQ_C * Math.PI * 2 + radius * 0.04) *
+                        0.08;
+                    const finalRadius = particleRadius * sizeBreathing;
+
+                    // ── Draw the particle ──
+                    ctx.beginPath();
+                    ctx.arc(x, y, finalRadius, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsl(${hue}, ${NEON_SATURATION}%, ${NEON_LIGHTNESS}%)`;
+                    ctx.fill();
+
+                    // ── Subtle inner glow for neon effect ──
+                    if (finalRadius > 0.9 && sizeRatio < 0.85) {
+                        ctx.beginPath();
+                        ctx.arc(x, y, finalRadius * 0.45, 0, Math.PI * 2);
+                        ctx.fillStyle = `hsl(${hue}, ${NEON_SATURATION}%, ${Math.min(NEON_LIGHTNESS + 22, 88)}%)`;
+                        ctx.fill();
+                    }
+                }
+
+                // ── Draw a subtle central glow ──
+                const centralGlowRadius = 28 + Math.sin(elapsedTime * 1.1) * 6;
+                const centralGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, centralGlowRadius);
+                centralGlow.addColorStop(0, 'rgba(200, 140, 255, 0.25)');
+                centralGlow.addColorStop(0.4, 'rgba(140, 100, 220, 0.10)');
+                centralGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = centralGlow;
+                ctx.fillRect(
+                    centerX - centralGlowRadius,
+                    centerY - centralGlowRadius,
+                    centralGlowRadius * 2,
+                    centralGlowRadius * 2
+                );
+
+                // ── Continue animation ─────────────
+                animationId = requestAnimationFrame(animate);
+            }
+
+            // ─────────────────────────────────────
+            // Handle visibility change (pause when tab is hidden)
+            // ─────────────────────────────────────
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    lastTimestamp = null; // Reset timestamp to avoid dt spike
+                }
+            });
+
+            // ─────────────────────────────────────
+            // Start the animation
+            // ─────────────────────────────────────
+            animationId = requestAnimationFrame(animate);
+
+            // ─────────────────────────────────────
+            // Optional: Tap to reset the spiral
+            // ─────────────────────────────────────
+            let tapTimeout = null;
+            canvas.addEventListener('click', () => {
+                // Single tap: gently restart the growth
+                currentMaxN = Math.max(0, currentMaxN - TOTAL_POINTS * 0.6);
+                if (currentMaxN < 10) currentMaxN = 0;
+                elapsedTime += 0.35; // Slight phase shift for variety
+
+                // Brief visual pulse
+                if (tapTimeout) clearTimeout(tapTimeout);
+                hint.style.animation = 'none';
+                hint.offsetHeight; // Trigger reflow
+                hint.style.animation = 'fadeHint 4s ease-in-out forwards';
+                hint.textContent = '↺ renewing spiral';
+                tapTimeout = setTimeout(() => {
+                    hint.textContent = '✧ golden spiral breathing ✧';
+                }, 2200);
+            });
+
+            // ─────────────────────────────────────
+            // Log info
+            // ─────────────────────────────────────
+            console.log(
+                '%c🌻 Phyllotaxis Spiral %cReady',
+                'font-size: 16px; color: #d4a0ff;',
+                'color: #aaa;'
+            );
+            console.log(
+                '%c  Golden Angle: %c137.5078° %c| %cPoints: %c' + TOTAL_POINTS +
+                ' %c| %cDPR Cap: %c' + DPR_CAP + 'x',
+                'color: #888;', 'color: #b8d4ff;', 'color: #888;',
+                'color: #888;', 'color: #b8d4ff;', 'color: #888;',
+                'color: #888;', 'color: #b8d4ff;'
+            );
+            console.log(
+                '%c  Breathing: %cangle ±' + ANGLE_BREATHING_AMP.toFixed(1) +
+                '° %c| %cc ±' + (C_BREATHING_AMP_RATIO * 100).toFixed(0) + '%',
+                'color: #888;', 'color: #7ee0d0;', 'color: #888;', 'color: #7ee0d0;'
+            );
+            console.log('%c  Tap the spiral to renew it ✨', 'color: #666; font-style: italic;');
+        })();
+    </script>
+</body>
+</html>

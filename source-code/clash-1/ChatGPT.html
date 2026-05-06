@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Newton's Cradle — Matter.js</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #111827;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --line: rgba(255,255,255,0.16);
+      --string: rgba(220, 228, 240, 0.7);
+      --accent: #58a6ff;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(88,166,255,0.10), transparent 38%),
+        radial-gradient(circle at 50% 100%, rgba(255,255,255,0.05), transparent 32%),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .hud {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      background: rgba(17, 24, 39, 0.58);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.28);
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin: 0 0 4px;
+    }
+
+    .sub {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(88,166,255,0.14);
+      color: #cfe3ff;
+      font-size: 11px;
+      border: 1px solid rgba(88,166,255,0.18);
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <p class="title">Newton's Cradle</p>
+    <p class="sub">Matter.js physics • elastic collisions • metallic rendering</p>
+    <span class="badge">Auto-start on load</span>
+  </div>
+  <canvas id="world"></canvas>
+
+  <script>
+    const { Engine, World, Bodies, Body, Constraint, Composite, Events } = Matter;
+
+    const canvas = document.getElementById('world');
+    const ctx = canvas.getContext('2d');
+
+    const engine = Engine.create({
+      enableSleeping: false,
+      gravity: { x: 0, y: 1 }
+    });
+    engine.positionIterations = 12;
+    engine.velocityIterations = 10;
+    engine.constraintIterations = 6;
+
+    let W = 0, H = 0;
+    let pendulumGroup = [];
+    let topBar, leftWall, rightWall, floor;
+    let anchors = [];
+
+    const BALL_RADIUS = 34;
+    const STRING_LENGTH = 220;
+    const BALL_COUNT = 5;
+    const GAP = 2;
+
+    function resize() {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = Math.floor(W * dpr);
+      canvas.height = Math.floor(H * dpr);
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      rebuildWorld();
+    }
+
+    function clearWorld() {
+      World.clear(engine.world, false);
+      Engine.clear(engine);
+      pendulumGroup = [];
+      anchors = [];
+    }
+
+    function rebuildWorld() {
+      clearWorld();
+
+      const centerX = W * 0.5;
+      const topY = Math.max(90, H * 0.18);
+      const startX = centerX - ((BALL_COUNT - 1) * (BALL_RADIUS * 2 + GAP)) / 2;
+      const anchorSpacing = BALL_RADIUS * 2 + GAP;
+      const barWidth = BALL_COUNT * anchorSpacing + 80;
+
+      topBar = Bodies.rectangle(centerX, topY, barWidth, 18, {
+        isStatic: true,
+        render: { visible: false }
+      });
+
+      floor = Bodies.rectangle(centerX, H + 40, W * 2, 80, {
+        isStatic: true,
+        render: { visible: false }
+      });
+
+      leftWall = Bodies.rectangle(-40, H / 2, 80, H * 2, { isStatic: true, render: { visible: false } });
+      rightWall = Bodies.rectangle(W + 40, H / 2, 80, H * 2, { isStatic: true, render: { visible: false } });
+
+      World.add(engine.world, [topBar, floor, leftWall, rightWall]);
+
+      for (let i = 0; i < BALL_COUNT; i++) {
+        const anchorX = startX + i * anchorSpacing;
+        const anchorY = topY + 10;
+        anchors.push({ x: anchorX, y: anchorY });
+
+        const bobX = anchorX;
+        const bobY = anchorY + STRING_LENGTH;
+
+        const bob = Bodies.circle(bobX, bobY, BALL_RADIUS, {
+          friction: 0,
+          frictionAir: 0.0002,
+          frictionStatic: 0,
+          restitution: 1,
+          density: 0.008,
+          slop: 0.01,
+          render: { visible: false }
+        });
+
+        const rope = Constraint.create({
+          pointA: { x: anchorX, y: anchorY },
+          bodyB: bob,
+          pointB: { x: 0, y: 0 },
+          length: STRING_LENGTH,
+          stiffness: 0.98,
+          damping: 0.015,
+          render: { visible: false }
+        });
+
+        pendulumGroup.push({ body: bob, rope });
+        World.add(engine.world, [bob, rope]);
+      }
+
+      // Create the start motion by pulling the first sphere to 45° and releasing it.
+      const first = pendulumGroup[0].body;
+      const anchor = anchors[0];
+      const theta = -Math.PI / 4;
+      const pulledX = anchor.x + Math.sin(theta) * STRING_LENGTH;
+      const pulledY = anchor.y + Math.cos(theta) * STRING_LENGTH;
+
+      Body.setPosition(first, { x: pulledX, y: pulledY });
+      Body.setVelocity(first, { x: 0, y: 0 });
+      Body.setAngularVelocity(first, 0);
+      Body.setAngle(first, 0);
+    }
+
+    function drawBackground() {
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#0d1117');
+      bg.addColorStop(1, '#090c10');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // Subtle glow behind cradle.
+      const glow = ctx.createRadialGradient(W * 0.5, H * 0.2, 20, W * 0.5, H * 0.25, Math.max(W, H) * 0.55);
+      glow.addColorStop(0, 'rgba(88, 166, 255, 0.10)');
+      glow.addColorStop(1, 'rgba(88, 166, 255, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    function drawTopBar() {
+      const y = anchors[0].y;
+      const centerX = W * 0.5;
+      const width = BALL_COUNT * (BALL_RADIUS * 2 + GAP) + 80;
+      const grad = ctx.createLinearGradient(centerX - width / 2, 0, centerX + width / 2, 0);
+      grad.addColorStop(0, 'rgba(240, 245, 255, 0.10)');
+      grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.18)');
+      grad.addColorStop(1, 'rgba(240, 245, 255, 0.10)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(centerX - width / 2, y - 18, width, 18);
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(centerX - width / 2, y - 18, width, 18);
+    }
+
+    function drawString(ax, ay, bx, by) {
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(bx, by);
+      ctx.strokeStyle = 'rgba(226, 232, 240, 0.65)';
+      ctx.lineWidth = 1.25;
+      ctx.stroke();
+    }
+
+    function sphereGradient(x, y, r) {
+      const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.38, r * 0.12, x, y, r);
+      g.addColorStop(0, '#edf2f7');
+      g.addColorStop(0.18, '#cfd8e3');
+      g.addColorStop(0.48, '#8f9aa8');
+      g.addColorStop(0.78, '#4a5565');
+      g.addColorStop(1, '#1e242d');
+      return g;
+    }
+
+    function drawSphere(body) {
+      const { x, y } = body.position;
+      const r = BALL_RADIUS;
+
+      // Shadow
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(x + 9, y + 12, r * 0.92, r * 0.52, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+      ctx.filter = 'blur(7px)';
+      ctx.fill();
+      ctx.restore();
+
+      // Metallic body
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = sphereGradient(x, y, r);
+      ctx.fill();
+
+      // Edge sheen
+      const edge = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
+      edge.addColorStop(0, 'rgba(255,255,255,0.62)');
+      edge.addColorStop(0.5, 'rgba(255,255,255,0.00)');
+      edge.addColorStop(1, 'rgba(0,0,0,0.26)');
+      ctx.strokeStyle = edge;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Specular highlight
+      ctx.beginPath();
+      ctx.arc(x - r * 0.28, y - r * 0.33, r * 0.25, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fill();
+
+      // Soft rim lighting
+      ctx.beginPath();
+      ctx.arc(x, y, r - 0.8, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    function render() {
+      drawBackground();
+      drawTopBar();
+
+      for (const item of pendulumGroup) {
+        const body = item.body;
+        const ax = item.rope.pointA.x;
+        const ay = item.rope.pointA.y;
+        const bx = body.position.x;
+        const by = body.position.y;
+        drawString(ax, ay, bx, by);
+      }
+
+      // Draw balls in order so overlap looks natural.
+      for (const item of pendulumGroup) {
+        drawSphere(item.body);
+      }
+    }
+
+    function tick() {
+      Engine.update(engine, 1000 / 60);
+      render();
+      requestAnimationFrame(tick);
+    }
+
+    // Keep the first ball nicely pulled back after the world stabilizes.
+    Events.on(engine, 'afterUpdate', () => {
+      // Small correction on the first few frames so the initial pull is preserved cleanly.
+      const first = pendulumGroup[0]?.body;
+      if (!first) return;
+    });
+
+    window.addEventListener('resize', resize);
+    resize();
+    tick();
+  </script>
+</body>
+</html>

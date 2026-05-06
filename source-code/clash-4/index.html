@@ -485,7 +485,7 @@
     function loadCode(model) {
       const el = document.getElementById('codeblock-' + model);
       if (codeCache[model]) return;
-      const files = { chatgpt: 'ChatGPT.html', kimi: 'kimi.html', gemini: 'Gemini.html', deepseek: 'deepseek.html' };
+      const files = { chatgpt: 'ChatGPT.html', kimi: 'kimi.html', gemini: 'Gemini.html', deepseek: 'DeepSeek.html' };
       fetch(files[model]).then(r => r.text()).then(code => {
         codeCache[model] = true;
         el.textContent = code;

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,39 +16,159 @@
       max-width: 1100px;
       margin: 0 auto;
     }
-    @media (max-width: 768px) { .contact-layout { grid-template-columns: 1fr; } }
 
-    .contact-info h1 { margin-bottom: 16px; }
-    .contact-info p { color: var(--text-secondary); font-size: 16px; line-height: 1.75; margin-bottom: 40px; }
+    @media (max-width: 768px) {
+      .contact-layout {
+        grid-template-columns: 1fr;
+      }
+    }
 
-    .info-cards { display: flex; flex-direction: column; gap: 14px; }
-    .info-card { padding: 20px 22px; display: flex; gap: 16px; align-items: flex-start; }
-    .info-card-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
-    .info-card-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 4px; color: var(--text-primary); }
-    .info-card-text p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
-    .info-card-text a { color: var(--accent); }
+    .contact-info h1 {
+      margin-bottom: 16px;
+    }
 
-    .form-card { padding: 40px; }
-    .form-card h2 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; margin-bottom: 28px; color: var(--text-primary); letter-spacing: -0.02em; }
+    .contact-info p {
+      color: var(--text-secondary);
+      font-size: 16px;
+      line-height: 1.75;
+      margin-bottom: 40px;
+    }
 
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+    .info-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
 
-    .form-success { display: none; text-align: center; padding: 40px 20px; }
-    .form-success .success-icon { font-size: 48px; margin-bottom: 16px; }
-    .form-success h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; margin-bottom: 10px; color: var(--text-primary); }
-    .form-success p { color: var(--text-secondary); font-size: 15px; }
-    .form-success.show { display: block; }
-    .form-body.hide { display: none; }
+    .info-card {
+      padding: 20px 22px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
 
-    .form-error { display: none; text-align: center; padding: 20px; margin-bottom: 16px; border-radius: var(--radius-md); background: rgba(255,59,48,0.08); border: 1px solid rgba(255,59,48,0.2); color: #ff6b6b; font-size: 14px; }
-    .form-error.show { display: block; }
+    .info-card-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
 
-    .btn-loading { pointer-events: none; opacity: 0.7; }
-    .btn-loading::after { content: ''; display: inline-block; width: 14px; height: 14px; border: 2px solid transparent; border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; margin-left: 8px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .info-card-text h4 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+    }
+
+    .info-card-text p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .info-card-text a {
+      color: var(--accent);
+    }
+
+    .form-card {
+      padding: 40px;
+    }
+
+    .form-card h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      margin-bottom: 28px;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 500px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-success {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .form-success .success-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .form-success h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+    }
+
+    .form-success p {
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+
+    .form-success.show {
+      display: block;
+    }
+
+    .form-body.hide {
+      display: none;
+    }
+
+    .form-error {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      margin-bottom: 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 59, 48, 0.08);
+      border: 1px solid rgba(255, 59, 48, 0.2);
+      color: #ff6b6b;
+      font-size: 14px;
+    }
+
+    .form-error.show {
+      display: block;
+    }
+
+    .btn-loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .btn-loading::after {
+      content: '';
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid transparent;
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-left: 8px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
   </style>
 </head>
+
 <body>
   <header id="site-nav"></header>
 
@@ -58,7 +179,8 @@
       <div class="contact-info">
         <p class="tag anim d1" style="margin-bottom: 20px;">📬 Get in Touch</p>
         <h1 class="heading-1 anim d2">Let's <span class="gradient-text">connect.</span></h1>
-        <p class="anim d3">Whether you want to collaborate, suggest a challenge, report an issue, or just say hello — I'd love to hear from you.</p>
+        <p class="anim d3">Whether you want to collaborate, suggest a challenge, report an issue, or just say hello —
+          I'd love to hear from you.</p>
 
         <div class="info-cards">
           <div class="glass-card info-card anim d1">
@@ -98,7 +220,7 @@
           <h2>Send a message</h2>
 
           <!-- Web3Forms access key -->
-          <input type="hidden" name="access_key" value="YOUR_ACCESS_KEY_HERE">
+          <input type="hidden" name="access_key" value="795c9b48-46b9-4418-b558-a787f88cf729">
           <!-- Optional: customize the email subject line -->
           <input type="hidden" name="subject" value="New Contact from Anstire.github.io">
           <!-- Honeypot spam protection -->
@@ -133,7 +255,8 @@
           </div>
           <div class="form-group">
             <label for="message">Message</label>
-            <textarea id="message" name="message" class="input" rows="5" placeholder="What's on your mind?" required></textarea>
+            <textarea id="message" name="message" class="input" rows="5" placeholder="What's on your mind?"
+              required></textarea>
           </div>
           <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; justify-content: center;">
             Send Message →
@@ -187,4 +310,5 @@
     });
   </script>
 </body>
+
 </html>

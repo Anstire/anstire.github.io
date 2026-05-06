@@ -1,74 +1,318 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Clash #001 — Newton's Cradle | Source Code — Anstire</title>
-  <meta name="description" content="Source code from Code Clash #005: Beating Heart Animation. Compare implementations by ChatGPT, Claude, Gemini, and DeepSeek.">
+  <meta name="description"
+    content="Source code from Code Clash #005: Beating Heart Animation. Compare implementations by ChatGPT, Claude, Gemini, and DeepSeek.">
   <link rel="stylesheet" href="/assets/css/global.css">
   <style>
-    .clash-hero { padding: calc(var(--nav-height) + 56px) 24px 48px; max-width: 1200px; margin: 0 auto; }
-    .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-tertiary); margin-bottom: 24px; }
-    .breadcrumb a { color: var(--text-tertiary); transition: var(--transition); }
-    .breadcrumb a:hover { color: var(--accent); }
-    .breadcrumb svg { width: 14px; height: 14px; opacity: 0.5; }
-    .clash-badge-lg { display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 24px; font-size: 12px; font-weight: 600; background: rgba(var(--accent-rgb), 0.1); color: var(--accent); border: 1px solid rgba(var(--accent-rgb), 0.2); margin-bottom: 16px; }
-    .clash-title-lg { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(28px, 5vw, 48px); letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 16px; }
-    .clash-desc-lg { font-size: 16px; color: var(--text-secondary); line-height: 1.7; max-width: 640px; margin-bottom: 24px; }
-    .clash-meta { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; }
-    .meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-tertiary); }
-    .meta-item strong { color: var(--text-primary); font-weight: 600; }
+    .clash-hero {
+      padding: calc(var(--nav-height) + 56px) 24px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-tertiary);
+      margin-bottom: 24px;
+    }
+
+    .breadcrumb a {
+      color: var(--text-tertiary);
+      transition: var(--transition);
+    }
+
+    .breadcrumb a:hover {
+      color: var(--accent);
+    }
+
+    .breadcrumb svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.5;
+    }
+
+    .clash-badge-lg {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 24px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(var(--accent-rgb), 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(var(--accent-rgb), 0.2);
+      margin-bottom: 16px;
+    }
+
+    .clash-title-lg {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(28px, 5vw, 48px);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .clash-desc-lg {
+      font-size: 16px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      max-width: 640px;
+      margin-bottom: 24px;
+    }
+
+    .clash-meta {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    .meta-item strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
 
     /* Tabs */
-    .viewer-section { padding: 0 24px 80px; max-width: 1200px; margin: 0 auto; }
-    .model-tabs { display: flex; gap: 4px; margin-bottom: 0; background: var(--bg-elevated); border: 1px solid var(--glass-border); border-bottom: none; border-radius: var(--radius-md) var(--radius-md) 0 0; padding: 6px 6px 0; overflow-x: auto; }
-    .model-tab { padding: 10px 20px; border-radius: var(--radius-sm) var(--radius-sm) 0 0; font-size: 13px; font-weight: 600; color: var(--text-tertiary); cursor: pointer; transition: var(--transition); border: none; background: transparent; font-family: inherit; white-space: nowrap; position: relative; }
-    .model-tab:hover { color: var(--text-secondary); background: rgba(var(--accent-rgb), 0.05); }
-    .model-tab.active { color: var(--accent); background: var(--bg-surface); }
-    .model-tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 2px 2px 0 0; }
+    .viewer-section {
+      padding: 0 24px 80px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .model-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 0;
+      background: var(--bg-elevated);
+      border: 1px solid var(--glass-border);
+      border-bottom: none;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      padding: 6px 6px 0;
+      overflow-x: auto;
+    }
+
+    .model-tab {
+      padding: 10px 20px;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      white-space: nowrap;
+      position: relative;
+    }
+
+    .model-tab:hover {
+      color: var(--text-secondary);
+      background: rgba(var(--accent-rgb), 0.05);
+    }
+
+    .model-tab.active {
+      color: var(--accent);
+      background: var(--bg-surface);
+    }
+
+    .model-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      border-radius: 2px 2px 0 0;
+    }
 
     /* Preview + Code Container */
-    .viewer-container { border: 1px solid var(--glass-border); border-radius: 0 0 var(--radius-md) var(--radius-md); overflow: hidden; background: var(--bg-surface); }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .viewer-container {
+      border: 1px solid var(--glass-border);
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow: hidden;
+      background: var(--bg-surface);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
 
     /* Toggle bar */
-    .view-toggle { display: flex; border-bottom: 1px solid var(--glass-border); background: var(--bg-elevated); }
-    .view-toggle-btn { flex: 1; padding: 10px; text-align: center; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-tertiary); cursor: pointer; transition: var(--transition); border: none; background: transparent; font-family: inherit; }
-    .view-toggle-btn:hover { color: var(--text-secondary); }
-    .view-toggle-btn.active { color: var(--accent); background: rgba(var(--accent-rgb), 0.06); }
-    .view-toggle-btn + .view-toggle-btn { border-left: 1px solid var(--glass-border); }
+    .view-toggle {
+      display: flex;
+      border-bottom: 1px solid var(--glass-border);
+      background: var(--bg-elevated);
+    }
+
+    .view-toggle-btn {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      background: transparent;
+      font-family: inherit;
+    }
+
+    .view-toggle-btn:hover {
+      color: var(--text-secondary);
+    }
+
+    .view-toggle-btn.active {
+      color: var(--accent);
+      background: rgba(var(--accent-rgb), 0.06);
+    }
+
+    .view-toggle-btn+.view-toggle-btn {
+      border-left: 1px solid var(--glass-border);
+    }
 
     /* Preview iframe */
-    .preview-frame { width: 100%; height: 500px; border: none; background: #050507; display: block; }
-    .preview-wrap { display: none; }
-    .preview-wrap.active { display: block; }
+    .preview-frame {
+      width: 100%;
+      height: 500px;
+      border: none;
+      background: #050507;
+      display: block;
+    }
+
+    .preview-wrap {
+      display: none;
+    }
+
+    .preview-wrap.active {
+      display: block;
+    }
 
     /* Code block */
-    .code-wrap { display: none; max-height: 600px; overflow: auto; }
-    .code-wrap.active { display: block; }
-    .code-block { margin: 0; padding: 24px; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; line-height: 1.8; color: var(--text-secondary); background: var(--bg-elevated); white-space: pre-wrap; word-break: break-word; tab-size: 2; }
+    .code-wrap {
+      display: none;
+      max-height: 600px;
+      overflow: auto;
+    }
+
+    .code-wrap.active {
+      display: block;
+    }
+
+    .code-block {
+      margin: 0;
+      padding: 24px;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      background: var(--bg-elevated);
+      white-space: pre-wrap;
+      word-break: break-word;
+      tab-size: 2;
+    }
 
     /* Download bar */
-    .download-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid var(--glass-border); background: var(--bg-elevated); }
-    .download-info { font-size: 12px; color: var(--text-tertiary); }
-    .download-bar .btn-sm { font-size: 12px; }
+    .download-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      border-top: 1px solid var(--glass-border);
+      background: var(--bg-elevated);
+    }
+
+    .download-info {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    .download-bar .btn-sm {
+      font-size: 12px;
+    }
 
     /* Models grid at bottom */
-    .models-overview { padding: 0 24px 80px; max-width: 1200px; margin: 0 auto; }
-    .models-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 32px; }
-    .model-card { padding: 24px; }
-    .model-card-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; margin-bottom: 8px; color: var(--text-primary); }
-    .model-card-detail { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
-    .model-card-lines { margin-top: 12px; font-family: 'SF Mono', monospace; font-size: 12px; color: var(--text-tertiary); }
+    .models-overview {
+      padding: 0 24px 80px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .models-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 32px;
+    }
+
+    .model-card {
+      padding: 24px;
+    }
+
+    .model-card-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .model-card-detail {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .model-card-lines {
+      margin-top: 12px;
+      font-family: 'SF Mono', monospace;
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
 
     @media (max-width: 640px) {
-      .preview-frame { height: 350px; }
-      .model-tabs { padding: 4px 4px 0; }
-      .model-tab { padding: 8px 14px; font-size: 12px; }
+      .preview-frame {
+        height: 350px;
+      }
+
+      .model-tabs {
+        padding: 4px 4px 0;
+      }
+
+      .model-tab {
+        padding: 8px 14px;
+        font-size: 12px;
+      }
     }
   </style>
 </head>
+
 <body>
   <header id="site-nav"></header>
 
@@ -76,14 +320,20 @@
     <div class="clash-hero">
       <nav class="breadcrumb anim d1">
         <a href="/">Home</a>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m9 18 6-6-6-6" />
+        </svg>
         <a href="/source-code">Source Code</a>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m9 18 6-6-6-6" />
+        </svg>
         <span>Clash #005</span>
       </nav>
       <span class="clash-badge-lg anim d2">⚡ Clash #001 — Physics Simulation</span>
       <h1 class="clash-title-lg anim d2">Beating <span class="gradient-text">Heart</span></h1>
-      <p class="clash-desc-lg anim d3">Four AI models tackle a classic physics simulation — building a realistic Newton's Cradle with Matter.js, metallic sphere rendering, and elastic collision physics. Compare the approaches, visual quality, and code structure.</p>
+      <p class="clash-desc-lg anim d3">Four AI models tackle a classic physics simulation — building a realistic
+        Newton's Cradle with Matter.js, metallic sphere rendering, and elastic collision physics. Compare the
+        approaches, visual quality, and code structure.</p>
       <div class="clash-meta anim d4">
         <div class="meta-item"><strong>4</strong> Models</div>
         <div class="meta-item"><strong>HTML/JS</strong> Language</div>
@@ -108,9 +358,12 @@
             <button class="view-toggle-btn" onclick="toggleView('chatgpt','code')">{ } Source Code</button>
           </div>
           <div class="preview-wrap active" id="preview-chatgpt">
-            <iframe class="preview-frame" src="ChatGPT.html" loading="lazy" sandbox="allow-scripts allow-same-origin" title="ChatGPT Beating Heart Preview"></iframe>
+            <iframe class="preview-frame" src="ChatGPT.html" loading="lazy" sandbox="allow-scripts allow-same-origin"
+              title="ChatGPT Beating Heart Preview"></iframe>
           </div>
-          <div class="code-wrap" id="code-chatgpt"><pre class="code-block" id="codeblock-chatgpt">Loading…</pre></div>
+          <div class="code-wrap" id="code-chatgpt">
+            <pre class="code-block" id="codeblock-chatgpt">Loading…</pre>
+          </div>
           <div class="download-bar">
             <span class="download-info">ChatGPT — Newton's Cradle • HTML/JS</span>
             <a href="ChatGPT.html" download class="btn btn-ghost btn-sm">↓ Download</a>
@@ -124,9 +377,12 @@
             <button class="view-toggle-btn" onclick="toggleView('claude','code')">{ } Source Code</button>
           </div>
           <div class="preview-wrap active" id="preview-claude">
-            <iframe class="preview-frame" src="Claude.html" loading="lazy" sandbox="allow-scripts allow-same-origin" title="Claude Beating Heart Preview"></iframe>
+            <iframe class="preview-frame" src="Claude.html" loading="lazy" sandbox="allow-scripts allow-same-origin"
+              title="Claude Beating Heart Preview"></iframe>
           </div>
-          <div class="code-wrap" id="code-claude"><pre class="code-block" id="codeblock-claude">Loading…</pre></div>
+          <div class="code-wrap" id="code-claude">
+            <pre class="code-block" id="codeblock-claude">Loading…</pre>
+          </div>
           <div class="download-bar">
             <span class="download-info">Claude — Newton's Cradle • HTML/JS</span>
             <a href="Claude.html" download class="btn btn-ghost btn-sm">↓ Download</a>
@@ -140,9 +396,12 @@
             <button class="view-toggle-btn" onclick="toggleView('gemini','code')">{ } Source Code</button>
           </div>
           <div class="preview-wrap active" id="preview-gemini">
-            <iframe class="preview-frame" src="Gemini.html" loading="lazy" sandbox="allow-scripts allow-same-origin" title="Gemini Beating Heart Preview"></iframe>
+            <iframe class="preview-frame" src="Gemini.html" loading="lazy" sandbox="allow-scripts allow-same-origin"
+              title="Gemini Beating Heart Preview"></iframe>
           </div>
-          <div class="code-wrap" id="code-gemini"><pre class="code-block" id="codeblock-gemini">Loading…</pre></div>
+          <div class="code-wrap" id="code-gemini">
+            <pre class="code-block" id="codeblock-gemini">Loading…</pre>
+          </div>
           <div class="download-bar">
             <span class="download-info">Gemini — Newton's Cradle • HTML/JS</span>
             <a href="Gemini.html" download class="btn btn-ghost btn-sm">↓ Download</a>
@@ -156,12 +415,15 @@
             <button class="view-toggle-btn" onclick="toggleView('deepseek','code')">{ } Source Code</button>
           </div>
           <div class="preview-wrap active" id="preview-deepseek">
-            <iframe class="preview-frame" src="deepseek.html" loading="lazy" sandbox="allow-scripts allow-same-origin" title="DeepSeek Beating Heart Preview"></iframe>
+            <iframe class="preview-frame" src="DeepSeek.html" loading="lazy" sandbox="allow-scripts allow-same-origin"
+              title="DeepSeek Beating Heart Preview"></iframe>
           </div>
-          <div class="code-wrap" id="code-deepseek"><pre class="code-block" id="codeblock-deepseek">Loading…</pre></div>
+          <div class="code-wrap" id="code-deepseek">
+            <pre class="code-block" id="codeblock-deepseek">Loading…</pre>
+          </div>
           <div class="download-bar">
             <span class="download-info">DeepSeek — Newton's Cradle • HTML/JS</span>
-            <a href="deepseek.html" download class="btn btn-ghost btn-sm">↓ Download</a>
+            <a href="DeepSeek.html" download class="btn btn-ghost btn-sm">↓ Download</a>
           </div>
         </div>
       </div>
@@ -173,12 +435,14 @@
       <div class="models-grid">
         <div class="glass-card model-card anim d1">
           <div class="model-card-name">ChatGPT</div>
-          <div class="model-card-detail">Uses Matter.js with custom Canvas 2D renderer. Features metallic radial gradients, shadow blur effects, and auto-start with 45° pull angle.</div>
+          <div class="model-card-detail">Uses Matter.js with custom Canvas 2D renderer. Features metallic radial
+            gradients, shadow blur effects, and auto-start with 45° pull angle.</div>
           <div class="model-card-lines">329 lines • 9.8 KB</div>
         </div>
         <div class="glass-card model-card anim d2">
           <div class="model-card-name">Claude</div>
-          <div class="model-card-detail">Detailed heart with layered glow, vein rendering, and smooth breathing animation.</div>
+          <div class="model-card-detail">Detailed heart with layered glow, vein rendering, and smooth breathing
+            animation.</div>
           <div class="model-card-lines">523 lines • 16.2 KB</div>
         </div>
         <div class="glass-card model-card anim d3">
@@ -188,7 +452,8 @@
         </div>
         <div class="glass-card model-card anim d4">
           <div class="model-card-name">DeepSeek</div>
-          <div class="model-card-detail">Most detailed — side posts, anchor rings, energy tracking indicator, auto-refresh after energy decay, keyboard shortcuts, and HiDPI support.</div>
+          <div class="model-card-detail">Most detailed — side posts, anchor rings, energy tracking indicator,
+            auto-refresh after energy decay, keyboard shortcuts, and HiDPI support.</div>
           <div class="model-card-lines">752 lines • 33.5 KB</div>
         </div>
       </div>
@@ -220,7 +485,7 @@
     function loadCode(model) {
       const el = document.getElementById('codeblock-' + model);
       if (codeCache[model]) return;
-      const files = { chatgpt: 'ChatGPT.html', claude: 'Claude.html', gemini: 'Gemini.html', deepseek: 'deepseek.html' };
+      const files = { chatgpt: 'ChatGPT.html', claude: 'Claude.html', gemini: 'Gemini.html', deepseek: 'DeepSeek.html' };
       fetch(files[model]).then(r => r.text()).then(code => {
         codeCache[model] = true;
         el.textContent = code;
@@ -229,4 +494,5 @@
     loadCode('chatgpt');
   </script>
 </body>
+
 </html>

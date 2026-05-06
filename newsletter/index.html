@@ -114,7 +114,11 @@
 
         <!-- RIGHT: Form -->
         <div class="glass-card nl-form-card anim d3">
-          <div class="form-content">
+          <form action="https://buttondown.email/api/emails/embed-subscribe/YOUR_BUTTONDOWN_USERNAME" 
+                method="post" 
+                target="popupwindow" 
+                onsubmit="window.open('https://buttondown.email/YOUR_BUTTONDOWN_USERNAME', 'popupwindow')"
+                class="form-content">
             <h2>Subscribe free</h2>
             <p class="sub">Choose your cadence, enter your email, done.</p>
 
@@ -130,21 +134,25 @@
                 <div class="plan-freq" style="color: var(--text-tertiary);">Lighter inbox</div>
               </div>
             </div>
+            
+            <!-- Hidden field for cadence preference if you want to track it later -->
+            <input type="hidden" name="metadata__cadence" id="cadence_input" value="weekly">
 
+            <!-- Buttondown only technically needs email, but allows name via metadata -->
             <div class="form-group">
-              <label for="nl-name">Your Name</label>
-              <input type="text" id="nl-name" class="input" placeholder="Shubham">
+              <label for="nl-name">Your Name (optional)</label>
+              <input type="text" id="nl-name" name="metadata__name" class="input" placeholder="Shubham">
             </div>
             <div class="form-group">
               <label for="nl-email">Email Address</label>
-              <input type="email" id="nl-email" class="input" placeholder="you@example.com">
+              <input type="email" id="nl-email" name="email" class="input" placeholder="you@example.com" required>
             </div>
 
-            <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top: 4px;" onclick="subscribe()">
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top: 4px;">
               Subscribe to the Lab Letter →
             </button>
             <p class="freq-note">Free forever. Unsubscribe any time. No ads.</p>
-          </div>
+          </form>
 
           <div class="success-state">
             <div class="s-icon">🎉</div>
@@ -191,13 +199,16 @@
       selectedPlan = plan;
       document.querySelectorAll('.plan-opt').forEach(o => o.classList.remove('selected'));
       el.classList.add('selected');
+      document.getElementById('cadence_input').value = plan;
     }
-    function subscribe() {
-      const email = document.getElementById('nl-email').value;
-      if (!email || !email.includes('@')) { alert('Please enter a valid email address.'); return; }
-      document.querySelector('.form-content').classList.add('hide');
-      document.querySelector('.success-state').classList.add('show');
-    }
+    
+    // Listen for form submission to show success state after opening popup
+    document.querySelector('.form-content').addEventListener('submit', () => {
+      setTimeout(() => {
+        document.querySelector('.form-content').classList.add('hide');
+        document.querySelector('.success-state').classList.add('show');
+      }, 500);
+    });
   </script>
 </body>
 </html>
